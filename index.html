@@ -1477,6 +1477,18 @@ async function initiateDownload(quality) {
   }
 }
 
+/* ---- Profanity filter ---- */
+const BANNED_WORDS = [
+  'nigger','nigga','faggot','fag','chink','spic','kike','tranny','retard',
+  'cunt','whore','slut','twat','bitch','bastard','asshole','shit','fuck',
+  'cock','dick','pussy','piss','crap','damn','hell','arse','bollocks',
+  'wanker','tosser','prick','slag','shag','twat','bellend'
+];
+function containsProfanity(str) {
+  const normalized = str.toLowerCase().replace(/[^a-z]/g, '');
+  return BANNED_WORDS.some(w => normalized.includes(w));
+}
+
 /* ---- Post a comment ---- */
 async function postComment() {
   const name = document.getElementById('commentName').value.trim() || 'Anonymous';
@@ -1487,6 +1499,8 @@ async function postComment() {
   if(!text) { errEl.textContent = "Please write a comment."; return; }
   if(text.length > 3000) { errEl.textContent = "Comment exceeds 3000 characters."; return; }
   if(!canPostComment()) { errEl.textContent = "You've reached 5 comments for this 12-hour window."; return; }
+  if(containsProfanity(name)) { errEl.textContent = "That name isn't allowed. Please choose another."; return; }
+  if(containsProfanity(text)) { errEl.textContent = "Your comment contains language that isn't allowed."; return; }
 
   // Name lock: prevent someone from changing their name after first post
   const savedName = localStorage.getItem('loopmark_myname');

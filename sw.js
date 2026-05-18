@@ -1,4 +1,4 @@
-const CACHE = 'loopmark-v3'; // Bumped the version!
+const CACHE = 'loopmark-v4'; // Bumped the version!
 const ASSETS = [
   '/',
   '/index.html',
