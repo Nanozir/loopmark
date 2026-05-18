@@ -679,7 +679,7 @@ document.addEventListener('paste', e => {
 });
 
 /* ---- Admin auth ---- */
-const ADMIN_PASSWORD = 'loopmark_admin_2024'; // change this to your own password
+const ADMIN_PASSWORD = 'LoopmarkAdmin07'; // change this to your own password
 let _adminAuthed = false;
 function isAdmin() {
   const name = document.getElementById('commentName').value.trim();
@@ -1507,13 +1507,6 @@ async function postComment() {
   if(!canPostComment()) { errEl.textContent = "You've reached 5 comments for this 12-hour window."; return; }
   if(containsProfanity(name)) { errEl.textContent = "That name isn't allowed. Please choose another."; return; }
   if(containsProfanity(text)) { errEl.textContent = "Your comment contains language that isn't allowed."; return; }
-
-  // Name lock: prevent someone from changing their name after first post
-  const savedName = localStorage.getItem('loopmark_myname');
-  if(name !== 'Anonymous' && name !== 'Admin') {
-    if(!savedName) localStorage.setItem('loopmark_myname', name);
-    else if(savedName !== name) { errEl.textContent = `Post as "${savedName}" or Anonymous.`; return; }
-  }
 
   const btn = document.querySelector('[onclick="postComment()"]');
   btn.disabled = true; btn.textContent = 'Posting…';
