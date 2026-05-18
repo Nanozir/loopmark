@@ -693,6 +693,12 @@ function requireAdminAuth() {
 }
 
 function uid(){return Math.random().toString(36).slice(2,8)}
+function uid(){return Math.random().toString(36).slice(2,8)}
+function getDeviceId() {
+  let id = localStorage.getItem('loopmark_device_id');
+  if (!id) { id = uid(); localStorage.setItem('loopmark_device_id', id); }
+  return id;
+}
 function fmt(t){if(!isFinite(t)||t<0)return'0:00';const m=Math.floor(t/60),s=Math.floor(t%60);return m+':'+(s<10?'0':'')+s}
 function fmtF(t){if(!isFinite(t)||t<0)return'0:00.0';const m=Math.floor(t/60),s=(t%60).toFixed(1).padStart(4,'0');return m+':'+s}
 function pct(t){return dur>0?Math.min(100,Math.max(0,t/dur*100)):0}
@@ -1517,7 +1523,7 @@ async function postComment() {
       const res = await fetch(`${SB}/comments`, {
         method: 'POST',
         headers: SUPABASE_HEADERS(),
-        body: JSON.stringify({ name, text, rating: currentRating, image_url: attachedImageDataUrl || null })
+        body: JSON.stringify({ name, text, rating: currentRating, image_url: attachedImageDataUrl || null, device_id: getDeviceId() })
       });
       if(!res.ok) {
         const err = await res.json();
@@ -1635,6 +1641,19 @@ async function deleteComment(id) {
   }
 }
 
+async function renameMyPosts(newName) {
+  await fetch(`${SB}/comments?device_id=eq.${getDeviceId()}`, {
+    method: 'PATCH',
+    headers: SUPABASE_HEADERS(),
+    body: JSON.stringify({ name: newName })
+  });
+  await loadComments();
+}
+function promptRename() {
+  const n = prompt('New name for all your posts:');
+  if (n && n.trim()) renameMyPosts(n.trim());
+}
+
 /* ---- Render comments list ---- */
 function renderComments(cmts) {
   const list = document.getElementById('commentsList');
@@ -1651,6 +1670,7 @@ function renderComments(cmts) {
     d.className = 'comment-box';
     const stars = '★'.repeat(c.rating||0) + '☆'.repeat(5-(c.rating||0));
     const liked = localStorage.getItem('loopmark_liked_'+c.id);
+    const isOwn = c.device_id === getDeviceId();
     const likes = c.likes || 0;
     const ts = c.created_at ? timeAgo(new Date(c.created_at).getTime()) : '';
     const safeText = (c.text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1666,6 +1686,7 @@ function renderComments(cmts) {
       <div class="comment-actions">
         <button class="like-btn ${liked?'liked':''}" onclick="likeComment('${c.id}',${likes})">♥ ${likes}</button>
         <button onclick="reportComment('${c.id}','${safeName}',\`${safeText.replace(/`/g,"'")}\`)">Report</button>
+${isOwn ? `<button onclick="promptRename()">✏ Rename me</button>` : ''}
         <button class="btn-admin-delete" onclick="deleteComment('${c.id}')">🗑 Delete</button>
       </div>
     `;
