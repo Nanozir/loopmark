@@ -1623,7 +1623,10 @@ async function deleteComment(id) {
   if(isConfigured()) {
     await fetch(`${SB}/comments?id=eq.${id}`, {
       method: 'DELETE',
-      headers: SUPABASE_HEADERS()
+      headers: {
+        'apikey': CONFIG.SUPABASE_ANON,
+        'Authorization': 'Bearer ' + CONFIG.SUPABASE_ANON
+      }
     });
     await loadComments();
   } else {
