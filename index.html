@@ -1,0 +1,1700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LoopMark — Segment Player</title>
+<meta name="description" content="Precision audio and video segment player with loop control. Mark in/out points, loop segments, auto-save sessions.">
+<meta name="theme-color" content="#5B4FE8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LoopMark">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Core Variables & Reset */
+*{box-sizing:border-box;margin:0;padding:0}
+:root {
+  --ink:#0d0d0d; --ink2:#444; --ink3:#888; --ink4:#bbb;
+  --paper:#f7f5f0; --card:#ffffff; --card2:#f0ede8;
+  --accent:#5B4FE8; --accent2:#8B82F0; --accentbg:#ede9ff;
+  --green:#1a9e6a; --greenbg:#e0f7ef;
+  --red:#d63b3b; --redbg:#fdeaea;
+  --border:#e0dcd6; --border2:#c8c3bc;
+  --r:10px; --rl:16px;
+  --mono:'JetBrains Mono',monospace;
+  --head:'Syne',sans-serif;
+}
+body.theme-dark {
+  --ink:#f0efe8; --ink2:#aaa; --ink3:#777; --ink4:#555;
+  --paper:#111110; --card:#1c1c1a; --card2:#252522;
+  --border:#2e2e2a; --border2:#3a3a36;
+  --accentbg:#1e1b3a; --greenbg:#0e2a1c; --redbg:#2a1010;
+}
+@media(prefers-color-scheme:dark){
+  body:not(.theme-light) {
+    --ink:#f0efe8; --ink2:#aaa; --ink3:#777; --ink4:#555;
+    --paper:#111110; --card:#1c1c1a; --card2:#252522;
+    --border:#2e2e2a; --border2:#3a3a36;
+    --accentbg:#1e1b3a; --greenbg:#0e2a1c; --redbg:#2a1010;
+  }
+}
+body{font-family:var(--head);background:var(--paper);color:var(--ink);min-height:100vh;padding:0; transition: background 0.3s, color 0.3s;}
+
+/* Topbar */
+.topbar{background:var(--card); border-bottom: 1px solid var(--border); padding:14px 20px;display:flex;align-items:center;justify-content:space-between; position:sticky; top:0; z-index: 100;}
+.logo{font-size:22px;font-weight:800;letter-spacing:-0.5px;color:#7a74c2;cursor:pointer;transition:transform 0.15s;}
+.logo:active{transform:scale(0.95);}
+.logo span{color:#9e99d4}
+.tagline{font-size:11px;color:var(--ink3);font-weight:400;margin-top:1px}
+.top-actions{display:flex;align-items:center;gap:12px;}
+
+.autosave-toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink3);cursor:pointer;user-select:none}
+.autosave-toggle .pill{width:36px;height:20px;border-radius:10px;background:#333;position:relative;transition:background .2s;flex-shrink:0}
+.autosave-toggle .pill.on{background:var(--accent)}
+.autosave-toggle .pill::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .2s}
+.autosave-toggle .pill.on::after{left:19px}
+
+.icon-btn{background:transparent; border:none; color:var(--ink); cursor:pointer; padding:6px; border-radius:var(--r); display:flex; align-items:center; justify-content:center; transition:background 0.2s;}
+.icon-btn:hover{background:var(--card2);}
+
+/* Layout */
+.app{max-width:1000px;margin:0 auto;padding:16px}
+.layout-grid {display: flex; flex-direction: column; gap: 16px;}
+@media(min-width: 850px) {
+  .layout-grid {flex-direction: row; align-items: flex-start;}
+  .player-col {flex: 1; min-width: 0;}
+  .seg-col {width: 360px; flex-shrink: 0; position:sticky; top:80px;}
+}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:16px;margin-bottom:12px; position:relative;}
+.card-dark{background:var(--card2);border:1px solid var(--border)}
+.section-label{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink3);margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;}
+.section-label.on-dark{color:var(--ink2)}
+
+/* Forms & Inputs */
+input[type=text],input[type=number],input[type=range],textarea{font-family:var(--mono);font-size:13px;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--card2);color:var(--ink);outline:none;width:100%;transition:border .15s,box-shadow .15s}
+input[type=text]:focus,input[type=number]:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,79,232,0.15)}
+input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;cursor:pointer;vertical-align:middle}
+textarea {resize:vertical; min-height:60px;}
+
+.tip-text{font-size:11px; color:var(--ink3); margin-top:4px;}
+.info-tooltip{cursor:help; border-bottom:1px dotted var(--ink3); color:var(--ink2);}
+
+/* Buttons */
+.btn{font-family:var(--head);font-size:13px;font-weight:500;padding:9px 15px;cursor:pointer;border-radius:var(--r);border:1px solid var(--border2);background:var(--card);color:var(--ink);display:inline-flex;align-items:center;gap:6px;transition:all .12s;white-space:nowrap;line-height:1}
+.btn:hover{background:var(--card2)}
+.btn:active{transform:scale(0.97)}
+.btn-accent{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-accent:hover{background:#4a3fd4;border-color:#4a3fd4}
+.btn-green{background:var(--green);color:#fff;border-color:var(--green)}
+.btn-green:hover{background:#158059}
+.btn-ghost{background:transparent;border-color:var(--border2);color:var(--ink2)}
+.btn-ghost:hover{background:var(--card2);color:var(--ink)}
+.btn-danger{background:transparent;color:var(--red);border-color:rgba(214,59,59,0.35)}
+.btn-danger:hover{background:var(--redbg)}
+.btn-icon{padding:9px 10px}
+.btn-full{width:100%;justify-content:center}
+.btn-sm{font-size:12px;padding:6px 10px}
+.row{display:flex;gap:8px;align-items:center}
+
+/* Player Zone */
+.audio-zone{background:var(--ink);border-radius:var(--rl);padding:24px 16px;margin-bottom:12px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.audio-icon{width:56px;height:56px;border-radius:50%;background:var(--accentbg);display:flex;align-items:center;justify-content:center}
+.audio-name{font-size:13px;color:#999;font-family:var(--mono);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.audio-loaded{font-size:12px;color:var(--accent2);font-weight:600}
+.video-wrap{border-radius:var(--rl);overflow:hidden;margin-bottom:12px}
+.video-wrap video{width:100%;display:block;max-height:340px;object-fit:contain;background:#000}
+
+/* Timeline */
+.tl-outer{position:relative;height:58px;cursor:pointer;user-select:none;margin-bottom:4px;padding-top:20px}
+.tl-track{position:relative;height:14px;background:var(--card2);border-radius:7px;overflow:visible;border:1px solid var(--border)}
+.tl-progress{position:absolute;top:0;left:0;height:100%;background:var(--accent);border-radius:7px;width:0%;pointer-events:none;opacity:0.6}
+.tl-seg-bar{position:absolute;top:0;height:100%;pointer-events:none;border-radius:2px}
+.tl-head{position:absolute;top:-5px;width:22px;height:22px;border-radius:50%;background:var(--accent);border:3px solid var(--card);transform:translateX(-50%);pointer-events:none}
+.tl-marker{position:absolute;top:-20px;width:2px;height:52px;transform:translateX(-50%);pointer-events:none}
+.tl-marker-lbl{position:absolute;top:0;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;white-space:nowrap;padding:2px 5px;border-radius:4px;color:#fff;font-family:var(--mono);line-height:1.4}
+.time-row{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-top:8px;margin-bottom:14px;font-family:var(--mono)}
+
+/* Transport */
+.transport{display:flex;align-items:center;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.skip-lbl{font-size:10px;font-weight:700;font-family:var(--mono);line-height:1}
+.t-disp{font-family:var(--mono);font-size:12px;color:var(--ink3);margin-left:auto}
+.mark-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.pending-info{font-size:12px;color:var(--accent);text-align:center;padding:4px 0 8px;min-height:20px;font-family:var(--mono)}
+.hint-pill{display:inline-flex;align-items:center;gap:5px;background:var(--accentbg);color:var(--accent);font-size:11px;font-weight:700;padding:5px 11px;border-radius:20px;margin-bottom:12px}
+
+/* Segments */
+.seg-row{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--border)}
+.seg-row:last-child{border-bottom:none}
+.seg-header{display:flex;align-items:flex-start;gap:10px;}
+.seg-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;color:#fff;margin-top:2px;font-family:var(--mono)}
+.seg-info{flex:1;min-width:0}
+.seg-name-input{font-family:var(--head);font-size:13px;font-weight:700;color:var(--ink);background:transparent;border:none;border-bottom:1px dashed var(--border2);padding:0 0 1px;outline:none;width:100%;margin-bottom:3px;transition:border-color .15s}
+.seg-name-input:focus{border-bottom-color:var(--accent);background:var(--card2);padding:0 4px 1px;border-radius:4px 4px 0 0}
+.seg-times{font-size:12px;color:var(--ink2);font-family:var(--mono)}
+.seg-dur{color:var(--ink3)}
+
+/* Segment Controls */
+.seg-ctrls-wrap {background:var(--card2); border-radius:var(--r); padding:10px; margin-top:4px; display:none;}
+.seg-ctrls-wrap.open {display:block;}
+.ctrl-group {margin-bottom:8px;}
+.ctrl-group:last-child {margin-bottom:0;}
+.ctrl-label {font-size:11px; font-weight:700; color:var(--ink3); margin-bottom:4px; display:block; text-transform:uppercase;}
+.slider-row {display:flex; align-items:center; gap:8px;}
+.slider-val {font-family:var(--mono); font-size:11px; color:var(--ink2); width:40px;}
+
+.loop-ctrl{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3);margin-top:6px;flex-wrap:wrap}
+.loop-ctrl input[type=number]{width:48px;font-size:12px;padding:4px 7px;text-align:center}
+.sub-label {display:block; font-size:10px; color:var(--ink4); margin-top:2px;}
+
+.repeat-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:13px;color:var(--ink2)}
+.repeat-row label{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none}
+
+.status-bar{border-radius:var(--r);padding:9px 14px;font-size:12px;color:var(--ink2);text-align:center;font-family:var(--mono);min-height:36px;display:flex;align-items:center;justify-content:center;background:var(--card);border:1px solid var(--border)}
+.status-bar.playing{background:var(--greenbg);color:var(--green);border-color:rgba(26,158,106,0.25)}
+.status-bar.err{background:var(--redbg);color:var(--red);border-color:rgba(214,59,59,0.25)}
+
+/* Download Media Section */
+.dl-media-box {background:var(--accentbg); border-radius:var(--r); padding:12px; margin-top:12px; border:1px solid var(--accent); display:none;}
+.dl-media-box h4 {font-size:13px; margin-bottom:8px; color:var(--accent);}
+.dl-options {display:flex; flex-wrap:wrap; gap:6px;}
+.dl-explain {font-size:11px; color:var(--ink3); margin-top:8px; line-height:1.5;}
+.dl-explain a {color:var(--accent);}
+
+/* Config banner */
+.config-banner {background:#fffbe6; border:1px solid #f0c040; border-radius:var(--r); padding:12px 14px; margin-bottom:14px; font-size:12px; line-height:1.6; color:#5a4a00; display:none;}
+.config-banner.show {display:block;}
+.config-banner strong {display:block; margin-bottom:4px; font-size:13px;}
+.config-banner code {background:rgba(0,0,0,0.08); padding:1px 5px; border-radius:3px; font-family:var(--mono); font-size:11px;}
+body.theme-dark .config-banner {background:#2a2200; border-color:#7a6000; color:#e0c060;}
+@media(prefers-color-scheme:dark){ body:not(.theme-light) .config-banner {background:#2a2200; border-color:#7a6000; color:#e0c060;} }
+
+/* Comments loading state */
+.cmt-loading {text-align:center; padding:20px; color:var(--ink3); font-family:var(--mono); font-size:12px;}
+.cmt-sync-row {display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+.cmt-count {font-size:11px; color:var(--ink3); font-family:var(--mono);}
+.like-btn {background:none; border:none; cursor:pointer; color:var(--ink3); font-size:11px; padding:2px 4px; border-radius:4px; transition:all .15s;}
+.like-btn:hover {background:var(--redbg); color:var(--red);}
+.like-btn.liked {color:var(--red);}
+
+/* Comments Section */
+.comments-section {margin-top:20px; border-top:1px solid var(--border); padding-top:20px;}
+.comment-box {background:var(--card2); border-radius:var(--r); padding:12px; margin-bottom:10px;}
+.comment-header {display:flex; justify-content:space-between; margin-bottom:6px; font-size:12px;}
+.comment-author {font-weight:700; color:var(--ink);}
+.comment-meta {color:var(--ink3); font-family:var(--mono);}
+.comment-text {font-size:13px; color:var(--ink2); line-height:1.4; word-break:break-word; overflow-wrap:anywhere; white-space:pre-wrap;}
+.comment-actions {margin-top:8px; display:flex; gap:10px; font-size:11px;}
+.comment-actions button {background:none; border:none; color:var(--ink3); cursor:pointer; padding:0;}
+.comment-actions button:hover {color:var(--accent);}
+.star-rating {display:flex; gap:4px; color:#f5c518; font-size:16px; cursor:pointer;}
+.star-rating span {transition:transform 0.1s;}
+.star-rating span:hover {transform:scale(1.2);}
+
+/* Previous uploads */
+.history-section{margin-top:20px}
+.history-cat{margin-bottom:12px}
+.history-cat-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.history-cat-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.hist-item{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;margin-bottom:7px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;transition:border-color .15s}
+.hist-item:hover{border-color:var(--accent)}
+.hist-item.active-item{border-color:var(--accent);background:var(--accentbg)}
+.hist-thumb{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hist-thumb.yt{background:#fde8e8}
+.hist-thumb.local-audio{background:var(--accentbg)}
+.hist-thumb.local-video{background:#e8f0fd}
+.hist-info{flex:1;min-width:0}
+.hist-name{font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px}
+.hist-name-input{font-family:var(--head);font-size:13px;font-weight:600;color:var(--ink);background:transparent;border:none;border-bottom:1px dashed transparent;padding:0 0 1px;outline:none;width:100%;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:text;transition:border-color .15s}
+.hist-name-input:hover{border-bottom-color:var(--border2)}
+.hist-name-input:focus{border-bottom-color:var(--accent);background:var(--card2);padding:0 4px 1px;border-radius:4px 4px 0 0;cursor:text}
+.hist-meta{font-size:11px;color:var(--ink3);font-family:var(--mono)}
+.hist-segs{font-size:11px;color:var(--accent);font-weight:600;margin-top:2px}
+.hist-actions{display:flex;gap:4px;align-items:flex-start;flex-shrink:0}
+.save-indicator{font-size:11px;font-family:var(--mono);color:var(--green);opacity:0;transition:opacity .3s;padding:2px 0}
+.save-indicator.show{opacity:1}
+.empty-history{font-size:13px;color:var(--ink3);text-align:center;padding:16px 0;font-family:var(--mono)}
+
+svg.ic{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+svg.ic-lg{width:18px;height:18px}
+svg.ic-xl{width:20px;height:20px}
+@media(max-width:480px){.app{padding:10px}.transport{gap:4px}}
+
+/* PWA install banner */
+.install-banner{display:none;align-items:center;gap:12px;background:var(--accentbg);border:1px solid var(--accent);border-radius:var(--rl);padding:13px 15px;margin:12px 0;animation:slideDown .3s ease}
+.install-banner.visible{display:flex}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.install-banner-text{flex:1;font-size:13px;color:var(--ink)}
+.install-banner-text strong{display:block;font-size:14px;margin-bottom:2px}
+.install-banner-text span{font-size:12px;color:var(--ink3);font-family:var(--mono)}
+
+/* External link card */
+.ext-link-card {background:var(--card2); border:1px solid var(--border); border-radius:var(--rl); padding:18px 20px; margin-bottom:12px; display:flex; align-items:center; gap:14px;}
+.ext-link-icon {width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:22px; background:var(--accentbg);}
+.ext-link-info {flex:1; min-width:0;}
+.ext-link-title {font-size:14px; font-weight:700; color:var(--ink); margin-bottom:3px;}
+.ext-link-url {font-size:11px; color:var(--ink3); font-family:var(--mono); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.ext-link-note {font-size:11px; color:var(--ink3); margin-top:5px; line-height:1.5;}
+
+/* Small app download link */
+.app-dl-link {font-size: 11px; color: var(--accent); text-decoration: underline; cursor: pointer; text-align: center; margin-top: 10px; display: block;}
+
+/* Comment composer extras */
+.char-counter {font-size:11px; font-family:var(--mono); color:var(--ink3); text-align:right; margin-top:3px;}
+.char-counter.warn {color:#d4537e;}
+.char-counter.over {color:var(--red); font-weight:700;}
+.cmt-media-bar {display:flex; align-items:center; gap:8px; margin-top:6px;}
+.cmt-media-btn {background:var(--card2); border:1px solid var(--border2); border-radius:var(--r); padding:6px 10px; font-size:12px; cursor:pointer; color:var(--ink2); display:inline-flex; align-items:center; gap:5px; transition:background .15s;}
+.cmt-media-btn:hover {background:var(--accentbg); color:var(--accent);}
+.cmt-preview {margin-top:8px; position:relative; display:inline-block;}
+.cmt-preview img {max-width:200px; max-height:140px; border-radius:var(--r); border:1px solid var(--border); display:block;}
+.cmt-preview-rm {position:absolute; top:-6px; right:-6px; background:var(--red); color:#fff; border:none; border-radius:50%; width:18px; height:18px; font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1;}
+.comment-img {max-width:100%; border-radius:var(--r); margin-top:8px; border:1px solid var(--border); display:block;}
+.btn-admin-delete {background:none; border:1px solid rgba(214,59,59,0.4); border-radius:6px; color:var(--red); font-size:11px; padding:2px 8px; cursor:pointer; font-family:var(--head);}
+.btn-admin-delete:hover {background:var(--redbg);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="logo" onclick="location.reload()" title="Refresh LoopMark">Loop<span>Mark</span></div>
+    <div class="tagline" data-i18n="tagline">Precision segment player</div>
+  </div>
+  <div class="top-actions">
+    <button class="icon-btn" title="Toggle Language (EN/SV)" onclick="toggleLang()">
+      <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    </button>
+    <button class="icon-btn" title="Toggle Dark/Light Mode" onclick="toggleTheme()">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <div class="autosave-toggle" onclick="toggleAutosave()" title="Auto-save segments across sessions">
+      <span id="autosaveLabel" data-i18n="autosave">Auto-save</span>
+      <div class="pill" id="autosavePill"></div>
+    </div>
+  </div>
+</div>
+
+  <div class="install-banner" id="installBanner">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    <div class="install-banner-text">
+      <strong data-i18n="installStrong">Install LoopMark</strong>
+      <span data-i18n="installSpan">Add to home screen for offline use on Mobile or Desktop</span>
+    </div>
+    <button class="btn btn-accent btn-sm" id="installBtn" data-i18n="installBtn">Install App</button>
+    <button class="btn btn-sm btn-icon" onclick="document.getElementById('installBanner').classList.remove('visible')" title="Dismiss" style="padding:6px 8px">✕</button>
+  </div>
+  
+  <div class="card" style="margin-top:4px">
+    <div class="section-label" data-i18n="loadMedia">Load media</div>
+    <div class="row" style="margin-bottom:10px">
+      <div style="flex:1;">
+        <input type="text" id="urlIn" data-i18n="urlPlaceholder" placeholder="YouTube URL, mp3, mp4, or direct link…">
+        <div class="tip-text" data-i18n="tipYt">Tip: works with YouTube URLs too</div>
+      </div>
+      <label style="margin:0;cursor:pointer;flex-shrink:0; align-self:flex-start;">
+        <input type="file" id="fileIn" accept="video/*,audio/*,.mp3,.mp4,.wav,.ogg,.webm,.flac,.m4a,.aac" style="display:none" onclick="this.value=null" onchange="loadFile(this)">
+        <span class="btn btn-sm" style="height:37px;">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span data-i18n="fileBtn">File</span>
+        </span>
+      </label>
+    </div>
+    <button class="btn btn-accent btn-full" onclick="loadUrl()">
+      <svg class="ic" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/></svg>
+      <span data-i18n="loadUrlBtn">Load URL</span>
+    </button>
+    <a class="app-dl-link" onclick="forceInstallPrompt()" data-i18n="dlApp">Want a native feel? Download the App</a>
+  </div>
+
+  <div class="layout-grid">
+    <div class="player-col" id="playerArea" style="display:none">
+      <div id="audioZone" class="audio-zone" style="display:none">
+        <div class="audio-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        </div>
+        <div class="audio-name" id="audioName">audio</div>
+        <div class="audio-loaded" id="audioLoaded"></div>
+      </div>
+      <div id="videoZone" class="video-wrap" style="display:none">
+        <video id="vidEl" controls preload="auto" style="width:100%;display:block"></video>
+      </div>
+      <div id="ytZone" style="display:none;border-radius:var(--rl);overflow:hidden;margin-bottom:12px;aspect-ratio:16/9">
+        <div id="ytDiv" style="width:100%;height:100%"></div>
+      </div>
+      <div id="extLinkZone" style="display:none"></div>
+
+      <div id="dlMediaBox" class="dl-media-box">
+        <h4 data-i18n="dlMedia">Download Media</h4>
+        <div class="dl-options" id="dlMediaBtns"></div>
+        <div class="dl-explain" id="dlMediaExplain"></div>
+      </div>
+
+      <div class="card">
+        <div class="tl-outer" id="tlOuter">
+          <div class="tl-track" id="tlTrack">
+            <div class="tl-progress" id="tlProgress"></div>
+            <div id="segBars"></div>
+            <div class="tl-head" id="tlHead" style="left:0%"></div>
+          </div>
+          <div id="markers"></div>
+        </div>
+        <div class="time-row"><span id="tCur">0:00</span><span id="tDur">--:--</span></div>
+        <div class="transport">
+          <button class="btn btn-icon" onclick="skip(-15)" title="Back 15s">
+            <svg class="ic ic-lg" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+            <span class="skip-lbl">15</span>
+          </button>
+          <button class="btn btn-icon" onclick="skip(-5)" title="Back 5s">
+            <svg class="ic ic-lg" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+            <span class="skip-lbl">5</span>
+          </button>
+          <button class="btn btn-accent btn-icon" id="ppBtn" onclick="toggleMediaPlay()" style="border-radius:50%;width:40px;height:40px;padding:0;justify-content:center">
+            <svg class="ic ic-xl" id="ppIcon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/></svg>
+          </button>
+          <button class="btn btn-icon" onclick="skip(5)" title="Forward 5s">
+            <span class="skip-lbl">5</span>
+            <svg class="ic ic-lg" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          </button>
+          <button class="btn btn-icon" onclick="skip(15)" title="Forward 15s">
+            <span class="skip-lbl">15</span>
+            <svg class="ic ic-lg" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          </button>
+          <span class="t-disp" id="tDisp">0:00.0 / --:--</span>
+        </div>
+        <div style="text-align:center;margin-bottom:10px">
+          <span class="hint-pill">
+            <svg class="ic" style="width:13px;height:13px" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span data-i18n="scrubHint">Scrub timeline → mark start → mark end</span>
+          </span>
+        </div>
+        <div class="mark-row">
+          <button class="btn btn-full" onclick="setStart()">
+            <svg class="ic" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span data-i18n="markStart">Mark start</span>
+            <span class="info-tooltip" title="Keyboard shortcut: Press 'S' to mark Start. Scrub the timeline to select the point.">❔</span>
+          </button>
+          <button class="btn btn-green btn-full" onclick="setEnd()">
+            <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" stroke="none"/></svg>
+            <span data-i18n="markEnd">Mark end + save</span>
+            <span class="info-tooltip" title="Keyboard shortcut: Press 'E' to mark End and save the segment.">❔</span>
+          </button>
+        </div>
+        <div class="pending-info" id="pendingInfo"></div>
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:2px">
+          <span class="save-indicator" id="saveIndicator" data-i18n="saved">✓ saved</span>
+        </div>
+      </div>
+
+      <div class="card card-dark">
+        <div class="section-label on-dark" data-i18n="playbackMaster">Playback Master</div>
+        <div class="repeat-row">
+          <label>
+            <input type="checkbox" id="repeatAll" checked onchange="toggleRepeatAll(this.checked)">
+            <span data-i18n="repeatAll">Repeat all segments on finish</span>
+          </label>
+        </div>
+        <div class="row" style="margin-bottom:12px;gap:8px">
+          <button class="btn btn-accent" id="playBtn" onclick="togglePlay()" style="min-width:110px;justify-content:center">
+            <svg class="ic ic-lg" id="playIcon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/></svg>
+            <span data-i18n="playAll">Play all</span>
+          </button>
+          <button class="btn btn-ghost btn-icon" onclick="stopAll()" title="Stop">
+            <svg class="ic ic-lg" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" stroke="none"/></svg>
+          </button>
+        </div>
+        <div class="status-bar" id="status" data-i18n="statusInit">Load a file or URL to get started.</div>
+      </div>
+    </div>
+
+    <div class="seg-col">
+      <div id="segCard" class="card" style="display:none; height:100%;">
+        <div class="section-label" data-i18n="yourSegs">Your Segments</div>
+        <div id="segList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card comments-section">
+    <div class="section-label">
+      <span data-i18n="commentsTitle">Community Feedback & Comments</span>
+      <span class="cmt-count" id="cmtCount"></span>
+    </div>
+    
+    <div style="margin-bottom: 16px;">
+      <input type="text" id="commentName" data-i18n="namePlaceholder" placeholder="Your Name (or leave blank to post Anonymously)" style="margin-bottom: 8px;">
+      <textarea id="commentText" data-i18n="commentPlaceholder" placeholder="Write your feedback..." maxlength="3000" oninput="updateCharCount()"></textarea>
+      <div class="char-counter" id="charCounter">0 / 3000</div>
+
+      <div class="cmt-media-bar">
+        <button class="cmt-media-btn" onclick="document.getElementById('cmtImgInput').click()" title="Attach image or GIF">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Image / GIF
+        </button>
+        <span style="font-size:11px; color:var(--ink4);">or paste an image (Ctrl+V)</span>
+      </div>
+      <input type="file" id="cmtImgInput" accept="image/*,.gif" style="display:none" onchange="handleImgAttach(this)">
+      <div id="cmtPreviewWrap"></div>
+
+      <div class="row" style="margin-top:8px; justify-content:space-between;">
+        <div class="star-rating" id="starSelector">
+          <span data-val="1">★</span><span data-val="2">★</span><span data-val="3">★</span><span data-val="4">★</span><span data-val="5">☆</span>
+        </div>
+        <button class="btn btn-sm btn-accent" onclick="postComment()" data-i18n="postBtn">Post Feedback</button>
+      </div>
+      <div id="commentError" style="color:var(--red); font-size:11px; margin-top:4px;"></div>
+    </div>
+
+    <div id="commentsList"></div>
+  </div>
+
+  <div class="history-section" id="historySection" style="display:none">
+    <div class="section-label" style="margin-bottom:12px" data-i18n="prevUploads">Previous uploads</div>
+    <div id="historyYT" class="history-cat" style="display:none">
+      <div class="history-cat-label">
+        <svg class="ic" style="width:13px;height:13px;color:#d63b3b" viewBox="0 0 24 24"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z" fill="currentColor" stroke="none"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="white" stroke="none"/></svg>
+        <span data-i18n="ytTitle">YouTube</span>
+      </div>
+      <div id="histListYT"></div>
+    </div>
+    <div id="historyLocal" class="history-cat" style="display:none">
+      <div class="history-cat-label">
+        <svg class="ic" style="width:13px;height:13px" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span data-i18n="localFiles">Local files</span>
+      </div>
+      <div id="histListLocal"></div>
+    </div>
+    <div id="histEmpty" class="empty-history" style="display:none" data-i18n="noSaved">No saved sessions yet.</div>
+  </div>
+
+</div>
+
+<script>
+/* ---- TRANSLATIONS / i18n ---- */
+const dict = {
+  en: {
+    tagline: "Precision segment player",
+    autosave: "Auto-save",
+    installStrong: "Install LoopMark",
+    installSpan: "Add to home screen for offline use on Mobile or Desktop",
+    installBtn: "Install App",
+    loadMedia: "Load media",
+    urlPlaceholder: "YouTube URL, mp3, mp4, or direct link…",
+    tipYt: "Tip: works with YouTube URLs too",
+    fileBtn: "File",
+    loadUrlBtn: "Load URL",
+    dlApp: "Want a native feel? Download the App",
+    dlMedia: "Download Media",
+    scrubHint: "Scrub timeline → mark start → mark end",
+    markStart: "Mark start",
+    markEnd: "Mark end + save",
+    saved: "✓ saved",
+    playbackMaster: "Playback Master",
+    repeatAll: "Repeat all segments on finish",
+    playAll: "Play all",
+    statusInit: "Load a file or URL to get started.",
+    yourSegs: "Your Segments",
+    commentsTitle: "Community Feedback & Comments",
+    namePlaceholder: "Your Name (or leave blank to post Anonymously)",
+    commentPlaceholder: "Write your feedback...",
+    postBtn: "Post Feedback",
+    prevUploads: "Previous uploads",
+    ytTitle: "YouTube",
+    localFiles: "Local files",
+    noSaved: "No saved sessions yet.",
+    // Dynamic text
+    ready: "Ready — ",
+    vidReady: "Video ready.",
+    ytReady: "YouTube ready.",
+    paused: "Paused.",
+    stopped: "Stopped.",
+    startFirst: "Click 'Mark start' first.",
+    endAfter: "End must come after start.",
+    addOne: "Add at least one segment first.",
+    dlMp3: "Download MP3",
+    dlMp4: "MP4",
+    forever: "forever",
+    orTimes: "or",
+    loopTimes: "How many times to loop",
+    testVol: "▶ Test",
+    advSettings: "Advanced",
+    moveSeg: "Move Segment Length",
+    waitMsg: "Waiting {s}s before next...",
+    playingSeg: "▶ Playing '{name}'…"
+  },
+  sv: {
+    tagline: "Precisionsspelare för segment",
+    autosave: "Spara automatiskt",
+    installStrong: "Installera LoopMark",
+    installSpan: "Lägg till på hemskärmen för användning offline",
+    installBtn: "Installera App",
+    loadMedia: "Ladda media",
+    urlPlaceholder: "YouTube-URL, mp3, mp4 eller direktlänk…",
+    tipYt: "Tips: fungerar även med YouTube-länkar",
+    fileBtn: "Fil",
+    loadUrlBtn: "Ladda URL",
+    dlApp: "Vill du ha en app-känsla? Ladda ner appen",
+    dlMedia: "Ladda ner media",
+    scrubHint: "Dra i tidslinjen → markera start → markera slut",
+    markStart: "Markera start",
+    markEnd: "Markera slut + spara",
+    saved: "✓ sparad",
+    playbackMaster: "Uppspelningskontroll",
+    repeatAll: "Upprepa alla segment när de är klara",
+    playAll: "Spela alla",
+    statusInit: "Ladda en fil eller URL för att börja.",
+    yourSegs: "Dina segment",
+    commentsTitle: "Gemenskapens feedback & kommentarer",
+    namePlaceholder: "Ditt namn (lämna blankt för att vara anonym)",
+    commentPlaceholder: "Skriv din feedback...",
+    postBtn: "Skicka feedback",
+    prevUploads: "Tidigare uppladdningar",
+    ytTitle: "YouTube",
+    localFiles: "Lokala filer",
+    noSaved: "Inga sparade sessioner ännu.",
+    // Dynamic text
+    ready: "Klar — ",
+    vidReady: "Video klar.",
+    ytReady: "YouTube klar.",
+    paused: "Pausad.",
+    stopped: "Stoppad.",
+    startFirst: "Klicka på 'Markera start' först.",
+    endAfter: "Slutet måste vara efter starten.",
+    addOne: "Lägg till minst ett segment först.",
+    dlMp3: "Ladda ner MP3",
+    dlMp4: "MP4",
+    forever: "för alltid",
+    orTimes: "eller",
+    loopTimes: "Hur många gånger att upprepa",
+    testVol: "▶ Testa",
+    advSettings: "Avancerat",
+    moveSeg: "Flytta segmentlängd",
+    waitMsg: "Väntar {s}s på nästa...",
+    playingSeg: "▶ Spelar '{name}'…"
+  }
+};
+
+/* ---- LANGUAGE INITIALIZATION & AUTO-DETECT ---- */
+let currentLang = localStorage.getItem('loopmark_lang');
+
+if (!currentLang) {
+  const browserLang = (navigator.language || navigator.userLanguage || '').toLowerCase();
+  currentLang = browserLang.startsWith('sv') ? 'sv' : 'en';
+  localStorage.setItem('loopmark_lang', currentLang);
+}
+
+function tr(key) {
+  return dict[currentLang][key] || key;
+}
+
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const text = tr(key);
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+      if (el.placeholder) el.placeholder = text;
+      if (el.type === 'button') el.value = text;
+    } else {
+      el.textContent = text;
+    }
+  });
+  
+  if(document.getElementById('dlMediaBtns').innerHTML !== '') {
+    setupDownloads(isYT, isYT ? currentSession?.src : '');
+  }
+  renderSegs();
+  renderHistory();
+  if(!med && !isYT) setStatus(tr('statusInit'));
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'en' ? 'sv' : 'en';
+  localStorage.setItem('loopmark_lang', currentLang);
+  applyTranslations();
+}
+
+// Core State
+const COLORS=['#5B4FE8','#1a9e6a','#d63b3b','#d4537e','#ba7517','#0e7ea8','#7d6b00'];
+const LS_KEY='loopmark_sessions';
+const LS_PREF='loopmark_autosave';
+
+let dur=0,segs=[],pending=null,playState=null,raf=null;
+let med=null,isYT=false,isAudio=false;
+let currentSession=null;
+let autosave=true;
+let saveTimer=null;
+let repeatAll=true;
+let currentRating = 4;
+let attachedImageDataUrl = null; // holds base64 of attached image
+
+/* ---- Char counter ---- */
+function updateCharCount() {
+  const txt = document.getElementById('commentText').value;
+  const n = txt.length;
+  const el = document.getElementById('charCounter');
+  el.textContent = n + ' / 3000';
+  el.className = 'char-counter' + (n > 2700 ? (n >= 3000 ? ' over' : ' warn') : '');
+}
+
+/* ---- Image attachment ---- */
+function handleImgAttach(input) {
+  const f = input.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = e => { attachedImageDataUrl = e.target.result; renderImgPreview(); };
+  reader.readAsDataURL(f);
+  input.value = '';
+}
+
+function renderImgPreview() {
+  const wrap = document.getElementById('cmtPreviewWrap');
+  if (!attachedImageDataUrl) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `<div class="cmt-preview">
+    <img src="${attachedImageDataUrl}" alt="preview">
+    <button class="cmt-preview-rm" onclick="removeAttachedImg()" title="Remove">✕</button>
+  </div>`;
+}
+
+function removeAttachedImg() {
+  attachedImageDataUrl = null;
+  renderImgPreview();
+}
+
+// Paste image support
+document.addEventListener('paste', e => {
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      const reader = new FileReader();
+      reader.onload = ev => { attachedImageDataUrl = ev.target.result; renderImgPreview(); };
+      reader.readAsDataURL(file);
+      break;
+    }
+  }
+});
+
+/* ---- Admin auth ---- */
+const ADMIN_PASSWORD = 'loopmark_admin_2024'; // change this to your own password
+let _adminAuthed = false;
+function isAdmin() {
+  const name = document.getElementById('commentName').value.trim();
+  return name === 'Admin' || name === CONFIG.ADMIN_EMAIL;
+}
+function requireAdminAuth() {
+  if (_adminAuthed) return true;
+  const pw = prompt('Enter admin password:');
+  if (pw === ADMIN_PASSWORD) { _adminAuthed = true; return true; }
+  alert('Wrong password.'); return false;
+}
+
+function uid(){return Math.random().toString(36).slice(2,8)}
+function fmt(t){if(!isFinite(t)||t<0)return'0:00';const m=Math.floor(t/60),s=Math.floor(t%60);return m+':'+(s<10?'0':'')+s}
+function fmtF(t){if(!isFinite(t)||t<0)return'0:00.0';const m=Math.floor(t/60),s=(t%60).toFixed(1).padStart(4,'0');return m+':'+s}
+function pct(t){return dur>0?Math.min(100,Math.max(0,t/dur*100)):0}
+
+/* ---- THEME TOGGLE ---- */
+function toggleTheme() {
+  const isDark = document.body.classList.contains('theme-dark') || 
+                 (!document.body.classList.contains('theme-light') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  if (isDark) {
+    document.body.classList.remove('theme-dark');
+    document.body.classList.add('theme-light');
+  } else {
+    document.body.classList.remove('theme-light');
+    document.body.classList.add('theme-dark');
+  }
+}
+
+/* ---- STORAGE ---- */
+function loadPrefs(){
+  try{autosave=localStorage.getItem(LS_PREF)!=='false';}catch(e){autosave=true;}
+  updateAutosaveUI();
+}
+function savePref(){try{localStorage.setItem(LS_PREF,autosave);}catch(e){}}
+function toggleAutosave(){
+  autosave=!autosave;savePref();updateAutosaveUI();
+  if(autosave&&currentSession&&segs.length)persistSession();
+}
+function updateAutosaveUI(){
+  document.getElementById('autosavePill').className='pill'+(autosave?' on':'');
+}
+
+function getSessions(){
+  try{return JSON.parse(localStorage.getItem(LS_KEY)||'[]');}catch(e){return[];}
+}
+function putSessions(arr){
+  try{localStorage.setItem(LS_KEY,JSON.stringify(arr));}catch(e){
+    setStatus(tr('storageFull'),'err');
+  }
+}
+
+function persistSession(){
+  if(!autosave||!currentSession)return;
+  const all=getSessions();
+  const idx=all.findIndex(s=>s.id===currentSession.id);
+  const entry={
+    ...currentSession,
+    segs:segs.map(s=>({...s})),
+    savedAt:Date.now(),
+    dur:dur
+  };
+  if(idx>=0)all[idx]=entry;else all.unshift(entry);
+  putSessions(all.slice(0,40));
+  flashSaved();
+  renderHistory();
+}
+
+function scheduleAutosave(){
+  if(!autosave)return;
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(persistSession,800);
+}
+
+function flashSaved(){
+  const el=document.getElementById('saveIndicator');
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),1800);
+}
+
+function deleteSession(id,e){
+  e.stopPropagation();
+  const all=getSessions().filter(s=>s.id!==id);
+  putSessions(all);
+  renderHistory();
+}
+
+function renameSession(id,newName){
+  const name=newName.trim()||'Untitled';
+  const all=getSessions();
+  const entry=all.find(s=>s.id===id);
+  if(entry){entry.name=name;putSessions(all);}
+  if(currentSession&&currentSession.id===id)currentSession.name=name;
+}
+
+function renderHistory(){
+  const all=getSessions();
+  const section=document.getElementById('historySection');
+  if(!all.length){
+    section.style.display='block';
+    document.getElementById('histEmpty').style.display='block';
+    document.getElementById('historyYT').style.display='none';
+    document.getElementById('historyLocal').style.display='none';
+    return;
+  }
+  section.style.display='block';
+  document.getElementById('histEmpty').style.display='none';
+
+  const ytItems=all.filter(s=>s.type==='yt');
+  const localItems=all.filter(s=>s.type!=='yt');
+
+  const ytCat=document.getElementById('historyYT');
+  const localCat=document.getElementById('historyLocal');
+
+  ytCat.style.display=ytItems.length?'block':'none';
+  localCat.style.display=localItems.length?'block':'none';
+
+  function renderList(items,el){
+    el.innerHTML='';
+    items.forEach(item=>{
+      const isActive=currentSession&&currentSession.id===item.id;
+      const d=document.createElement('div');
+      d.className='hist-item'+(isActive?' active-item':'');
+      d.onclick=()=>restoreSession(item);
+      const segCount=item.segs?item.segs.length:0;
+      const ago=timeAgo(item.savedAt);
+      const thumbClass=item.type==='yt'?'yt':item.isAudio?'local-audio':'local-video';
+      const thumbIcon=item.type==='yt'
+        ?`<svg width="18" height="18" viewBox="0 0 24 24" fill="#d63b3b" stroke="none"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 001.46 6.42 29 29 0 001 12a29 29 0 00.46 5.58A2.78 2.78 0 003.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.95A29 29 0 0023 12a29 29 0 00-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="white"/></svg>`
+        :item.isAudio
+        ?`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`
+        :`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185fa5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`;
+      d.innerHTML=`
+        <div class="hist-thumb ${thumbClass}">${thumbIcon}</div>
+        <div class="hist-info">
+          <input class="hist-name-input" value="${item.name.replace(/"/g,'&quot;')}" title="Click to rename" onclick="event.stopPropagation()" onchange="renameSession('${item.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">
+          <div class="hist-meta">${item.dur?fmt(item.dur)+' · ':''} ${ago}</div>
+          <div class="hist-segs">${segCount} segment</div>
+        </div>
+        <div class="hist-actions">
+          <button class="btn btn-danger btn-icon btn-sm" onclick="deleteSession('${item.id}',event)" title="Delete saved session">
+            <svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          </button>
+        </div>`;
+      el.appendChild(d);
+    });
+  }
+
+  renderList(ytItems,document.getElementById('histListYT'));
+  renderList(localItems,document.getElementById('histListLocal'));
+}
+
+function timeAgo(ts){
+  if(!ts)return '';
+  const s=Math.floor((Date.now()-ts)/1000);
+  if(s<60)return currentLang==='en'?'just now':'nyss';
+  if(s<3600)return Math.floor(s/60)+(currentLang==='en'?'m ago':'m sedan');
+  if(s<86400)return Math.floor(s/3600)+(currentLang==='en'?'h ago':'t sedan');
+  return Math.floor(s/86400)+(currentLang==='en'?'d ago':'d sedan');
+}
+
+function restoreSession(item){
+  if(!item.segs||!item.segs.length){setStatus('No segments saved in this session.','err');return;}
+  if(item.type==='yt'){
+    document.getElementById('urlIn').value=item.src;
+    isYT=true;isAudio=false;
+    resetZones();setupYT(item.src);
+  } else {
+    setStatus('Re-upload the local file to restore: '+item.name,'err');
+  }
+  currentSession=item;
+  // Make sure new properties are seeded if restoring old data
+  segs=item.segs.map(s=>({...s, vol: s.vol!==undefined?s.vol:100, pause: s.pause!==undefined?s.pause:0}));
+  dur=item.dur||0;
+  if(dur)document.getElementById('tDur').textContent=fmt(dur);
+  renderTimeline();renderSegs();
+  renderHistory();
+  setStatus('Session restored — '+item.segs.length+' segment(s) loaded.');
+}
+
+/* ---- ZONES ---- */
+function resetZones(){
+  ['audioZone','videoZone','ytZone','extLinkZone'].forEach(id=>document.getElementById(id).style.display='none');
+  if(med&&med.pause)med.pause();
+  document.getElementById('dlMediaBox').style.display='none';
+  med=null;dur=0;segs=[];pending=null;playState=null;
+  if(raf)cancelAnimationFrame(raf);
+  renderTimeline();renderSegs();
+  ['tCur','tDur'].forEach((id,i)=>document.getElementById(id).textContent=i?'--:--':'0:00');
+  document.getElementById('tDisp').textContent='0:00.0 / --:--';
+  document.getElementById('tlHead').style.left='0%';
+  document.getElementById('tlProgress').style.width='0%';
+  document.getElementById('pendingInfo').textContent='';
+}
+
+function setupDownloads(isYouTube, src) {
+  const box = document.getElementById('dlMediaBox');
+  const btns = document.getElementById('dlMediaBtns');
+  const explain = document.getElementById('dlMediaExplain');
+  box.style.display = 'block';
+  btns.innerHTML = '';
+
+  if (isYouTube) {
+    explain.innerHTML = `Download processed directly via our servers. 4K resolution requires a one-time $1 server processing fee.`;
+    btns.innerHTML = `
+      <button class="btn btn-sm btn-ghost" onclick="initiateDownload('MP3')">${tr('dlMp3')}</button>
+      <button class="btn btn-sm btn-ghost" onclick="initiateDownload('1080p')">${tr('dlMp4')} 1080p</button>
+      <button class="btn btn-sm btn-accent" onclick="initiateDownload('4K')" title="Requires $1 payment">${tr('dlMp4')} 4K ($1) 💎</button>
+    `;
+  } else if (src) {
+    // Direct URL or blob — can offer a real download
+    btns.innerHTML = `<a class="btn btn-sm btn-accent" href="${src}" download>⬇ Download file</a>`;
+    explain.innerHTML = '';
+  }
+}
+
+function loadFile(inp){
+  const f=inp.files[0];if(!f)return;
+  const url=URL.createObjectURL(f);
+  isAudio=/audio/i.test(f.type)||/\.(mp3|wav|flac|ogg|aac|m4a)$/i.test(f.name);
+  isYT=false;
+  currentSession={id:uid(),type:'local',isAudio,src:'',name:f.name,savedAt:Date.now()};
+  resetZones();
+  if(isAudio)setupAudio(url,f.name);else setupVideo(url,f.name);
+}
+
+/* ---- External / embedded service detection ---- */
+const EXT_SERVICES = [
+  { match: /notebooklm\.google\.com/i,      icon: '🎙️', name: 'Google NotebookLM',  note: 'AI-generated audio overview — opens in NotebookLM.' },
+  { match: /open\.spotify\.com/i,           icon: '🎵', name: 'Spotify',             note: 'Opens in Spotify. For local looping, download the track first.' },
+  { match: /soundcloud\.com/i,              icon: '🎧', name: 'SoundCloud',           note: 'Opens in SoundCloud. Direct audio files from SC can sometimes be loaded.' },
+  { match: /podcasts\.google\.com/i,        icon: '🎙️', name: 'Google Podcasts',     note: 'Opens in Google Podcasts.' },
+  { match: /music\.apple\.com/i,            icon: '🎵', name: 'Apple Music',          note: 'Opens in Apple Music.' },
+  { match: /tidal\.com/i,                   icon: '🎵', name: 'Tidal',               note: 'Opens in Tidal.' },
+  { match: /deezer\.com/i,                  icon: '🎵', name: 'Deezer',              note: 'Opens in Deezer.' },
+  { match: /mixcloud\.com/i,                icon: '🎧', name: 'Mixcloud',             note: 'Opens in Mixcloud.' },
+  { match: /anchor\.fm|podcasters\.spotify/i,icon:'🎙️', name: 'Podcast (Anchor/Spotify)', note: 'Opens the podcast page.' },
+  { match: /drive\.google\.com/i,           icon: '📁', name: 'Google Drive',         note: 'If the file is publicly shared, try copying the direct download link instead.' },
+  { match: /dropbox\.com/i,                 icon: '📦', name: 'Dropbox',              note: 'Change "?dl=0" to "?dl=1" at the end of the URL to get a direct download link LoopMark can play.' },
+  { match: /vimeo\.com/i,                   icon: '🎬', name: 'Vimeo',               note: 'Vimeo blocks direct embedding outside their player. Opens in Vimeo.' },
+  { match: /twitch\.tv/i,                   icon: '🎮', name: 'Twitch',              note: 'Opens in Twitch.' },
+  { match: /suno\.ai|suno\.com/i,           icon: '🤖', name: 'Suno AI',             note: 'AI-generated music. Use the Suno download button to get an MP3, then load it here.' },
+  { match: /udio\.com/i,                    icon: '🤖', name: 'Udio AI',             note: 'AI-generated music. Download the MP3 from Udio, then load it here.' },
+  { match: /elevenlabs\.io/i,               icon: '🤖', name: 'ElevenLabs',          note: 'AI voice. Download the audio file from ElevenLabs, then load it here.' },
+];
+
+function detectExtService(url) {
+  return EXT_SERVICES.find(s => s.match.test(url)) || null;
+}
+
+function setupExtLink(url, service) {
+  const zone = document.getElementById('extLinkZone');
+  const shortUrl = url.length > 60 ? url.slice(0, 57) + '…' : url;
+  zone.style.display = 'block';
+  document.getElementById('playerArea').style.display = 'block';
+  zone.innerHTML = `
+    <div class="ext-link-card">
+      <div class="ext-link-icon">${service.icon}</div>
+      <div class="ext-link-info">
+        <div class="ext-link-title">${service.name}</div>
+        <div class="ext-link-url" title="${url}">${shortUrl}</div>
+        <div class="ext-link-note">${service.note}</div>
+      </div>
+      <a class="btn btn-accent btn-sm" href="${url}" target="_blank" rel="noopener" style="flex-shrink:0">Open ↗</a>
+    </div>`;
+  setStatus(`Linked: ${service.name} — click "Open ↗" to listen.`);
+}
+
+function loadUrl(){
+  const v=document.getElementById('urlIn').value.trim();if(!v)return;
+  if(/youtu/i.test(v)){
+    isYT=true;isAudio=false;
+    const ytTitle=ytVideoTitle(v);
+    currentSession={id:uid(),type:'yt',isAudio:false,src:v,name:ytTitle,savedAt:Date.now()};
+    resetZones();setupYT(v);
+    setupDownloads(true, v);
+    return;
+  }
+  // Check for known external/embedded services that can't be played directly
+  const extService = detectExtService(v);
+  if (extService) {
+    resetZones();
+    setupExtLink(v, extService);
+    return;
+  }
+  isAudio=/\.(mp3|wav|flac|ogg|aac|m4a)(\?.*)?$/i.test(v);
+  isYT=false;
+  const name=v.split('/').pop().split('?')[0]||v.slice(0,40);
+  currentSession={id:uid(),type:'local',isAudio,src:v,name,savedAt:Date.now()};
+  resetZones();
+  if(isAudio)setupAudio(v,name);else setupVideo(v,name);
+  setupDownloads(false, v);
+}
+document.getElementById('urlIn').addEventListener('keydown',e=>{if(e.key==='Enter')loadUrl();});
+
+function ytVideoTitle(url){
+  const m=url.match(/(?:v=|youtu\.be\/)([^&?/]+)/);
+  return m?'YouTube — '+m[1]:url.slice(0,40);
+}
+
+function setupAudio(src,name){
+  document.getElementById('audioZone').style.display='flex';
+  document.getElementById('audioName').textContent=name||'audio';
+  document.getElementById('audioLoaded').textContent='';
+  document.getElementById('playerArea').style.display='block';
+  const a=new Audio();
+  a.preload='metadata';
+  med=a;
+  a.addEventListener('loadedmetadata',()=>{
+    dur=isFinite(a.duration)?a.duration:0;
+    document.getElementById('tDur').textContent=fmt(dur);
+    document.getElementById('tDisp').textContent='0:00.0 / '+fmt(dur);
+    document.getElementById('audioLoaded').textContent=fmt(dur)+' loaded';
+    if(currentSession)currentSession.dur=dur;
+    setStatus(tr('ready') + name.split(/[\\/]/).pop().slice(0,50));
+    renderTimeline();
+  });
+  a.addEventListener('timeupdate',onTick);
+  a.addEventListener('play',()=>setPPIcon(true));
+  a.addEventListener('pause',()=>setPPIcon(false));
+  a.addEventListener('ended',()=>{setPPIcon(false);if(playState)checkSeg(dur+1);});
+  a.addEventListener('error',()=>setStatus('Could not load audio. Check the file format or path.','err'));
+  a.src=src;
+}
+
+function setupVideo(src,name){
+  document.getElementById('videoZone').style.display='block';
+  document.getElementById('playerArea').style.display='block';
+  const v=document.getElementById('vidEl');
+  v.src=src;v.load();med=v;
+  v.addEventListener('loadedmetadata',()=>{
+    dur=v.duration;
+    document.getElementById('tDur').textContent=fmt(dur);
+    if(currentSession)currentSession.dur=dur;
+    setStatus(tr('vidReady'));renderTimeline();
+  },{once:true});
+  v.addEventListener('timeupdate',onTick);
+  v.addEventListener('play',()=>setPPIcon(true));
+  v.addEventListener('pause',()=>setPPIcon(false));
+  v.addEventListener('error',()=>setStatus('Could not load video.','err'));
+}
+
+function setupYT(url){
+  const m=url.match(/(?:v=|youtu\.be\/)([^&?/]+)/);
+  if(!m){setStatus(tr('errParse'),'err');return;}
+  const id=m[1];
+  document.getElementById('ytZone').style.display='block';
+  document.getElementById('playerArea').style.display='block';
+  
+  if(window.YT&&window.YT.Player && window._yt && window._yt.loadVideoById){
+    window._yt.loadVideoById(id);
+    dur=0;
+    setStatus('Loading YouTube...');
+    return;
+  }
+  if(window.YT&&window.YT.Player){initYTPlayer(id);return;}
+  
+  const s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s);
+  window.onYouTubeIframeAPIReady=()=>initYTPlayer(id);
+}
+function initYTPlayer(id){
+  window._yt=new YT.Player('ytDiv',{width:'100%',height:'100%',videoId:id,
+    playerVars:{playsinline:1,rel:0},
+    events:{
+      onReady:e=>{
+        dur=e.target.getDuration()||0;
+        document.getElementById('tDur').textContent=fmt(dur);
+        if(currentSession)currentSession.dur=dur;
+        setStatus(tr('ytReady'));renderTimeline();
+        setInterval(ytTick,150);
+      },
+      onStateChange:e=>{
+        setPPIcon(e.data===YT.PlayerState.PLAYING);
+        if(e.data===YT.PlayerState.PLAYING && !dur) {
+          dur=window._yt.getDuration();
+          document.getElementById('tDur').textContent=fmt(dur);
+        }
+      }
+    }
+  });
+}
+function ytTick(){
+  if(!window._yt||!window._yt.getCurrentTime)return;
+  const t=window._yt.getCurrentTime();
+  if(!dur&&window._yt.getDuration){dur=window._yt.getDuration();document.getElementById('tDur').textContent=fmt(dur);}
+  updateUI(t);
+  if(playState&&playState.playing)checkSeg(t);
+}
+
+function onTick(){if(!med)return;updateUI(med.currentTime);if(playState&&playState.playing)checkSeg(med.currentTime);}
+
+function updateUI(t){
+  document.getElementById('tCur').textContent=fmt(t);
+  document.getElementById('tDisp').textContent=fmtF(t)+' / '+fmt(dur);
+  const p=pct(t);
+  document.getElementById('tlHead').style.left=p+'%';
+  document.getElementById('tlProgress').style.width=p+'%';
+}
+function setPPIcon(on){
+  document.getElementById('ppIcon').innerHTML=on
+    ?'<rect x="6" y="4" width="4" height="16" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" fill="currentColor" stroke="none"/>'
+    :'<polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/>';
+}
+function curTime(){
+  if(med)return med.currentTime||0;
+  if(isYT&&window._yt&&window._yt.getCurrentTime)return window._yt.getCurrentTime() || 0;
+  return 0;
+}
+function seekTo(t){
+  t=Math.max(0,Math.min(dur||999999,t));
+  if(med)med.currentTime=t;else if(isYT&&window._yt)window._yt.seekTo(t,true);
+  updateUI(t);
+}
+
+function skip(s){seekTo(curTime()+s);}
+
+function tlPct(e,el){
+  const r=el.getBoundingClientRect();
+  const cx=e.touches?e.touches[0].clientX:e.clientX;
+  return Math.max(0,Math.min(1,(cx-r.left)/r.width));
+}
+const tl=document.getElementById('tlOuter');
+let drag=false;
+tl.addEventListener('mousedown',e=>{drag=true;seekTo(tlPct(e,tl)*dur);});
+document.addEventListener('mousemove',e=>{if(drag)seekTo(tlPct(e,tl)*dur);});
+document.addEventListener('mouseup',()=>drag=false);
+tl.addEventListener('touchstart',e=>{e.preventDefault();seekTo(tlPct(e,tl)*dur);},{passive:false});
+tl.addEventListener('touchmove',e=>{e.preventDefault();seekTo(tlPct(e,tl)*dur);},{passive:false});
+
+/* Keyboard shortcuts */
+document.addEventListener('keydown', e => {
+  if (['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  if (e.code === 'Space') { e.preventDefault(); toggleMediaPlay(); }
+  if (e.code === 'KeyS') { e.preventDefault(); setStart(); }
+  if (e.code === 'KeyE') { e.preventDefault(); setEnd(); }
+});
+
+function toggleMediaPlay(){
+  if(med){
+    if(med.paused||med.ended)med.play().catch(err=>setStatus('Playback blocked: '+err.message,'err'));
+    else med.pause();
+  } else if(isYT&&window._yt){
+    window._yt.getPlayerState()===YT.PlayerState.PLAYING?window._yt.pauseVideo():window._yt.playVideo();
+  }
+}
+
+function setStart(){
+  const t=curTime();pending={start:t};
+  document.getElementById('pendingInfo').textContent='▶ ' + fmtF(t) + ' — ' + tr('scrubHint').split('→').slice(1).join('→');
+  renderTimeline();
+}
+function setEnd(){
+  const t=curTime();
+  if(!pending){setStatus(tr('startFirst'),'err');return;}
+  if(t<=pending.start){setStatus(tr('endAfter'),'err');return;}
+  segs.push({id:uid(),start:pending.start,end:t,loops:1,infinite:false,color:COLORS[segs.length%COLORS.length], vol:100, pause:0});
+  pending=null;
+  document.getElementById('pendingInfo').textContent='';
+  renderTimeline();renderSegs();
+  const s=segs[segs.length-1];
+  setStatus('Segment '+segs.length+' — '+fmtF(s.start)+' → '+fmtF(s.end)+' ('+fmtF(s.end-s.start)+')');
+  scheduleAutosave();
+}
+function removeSeg(id){segs=segs.filter(s=>s.id!==id);renderTimeline();renderSegs();scheduleAutosave();}
+
+// General segment state updates
+function updateSeg(id,k,v){
+  const s=segs.find(x=>x.id===id);
+  if(s) s[k]=v;
+  scheduleAutosave();
+}
+
+// Safely sync times between the state, the slider, the number input, and the UI text
+function syncSegTimes(id, key, val, isSlider) {
+  const s = segs.find(x => x.id === id);
+  if (!s) return;
+  
+  let v = parseFloat(val);
+  if (isNaN(v)) return;
+
+  // Collision detection logic
+  if (key === 'start') {
+    if (v >= s.end - 0.1) v = s.end - 0.1;
+    if (v < 0) v = 0;
+  } else {
+    if (v <= s.start + 0.1) v = s.start + 0.1;
+    if (v > dur) v = dur;
+  }
+
+  s[key] = v;
+  scheduleAutosave();
+  renderTimeline(); // Safely updates timeline without rebuilding sidebar
+
+  // Target inputs by class names and update them directly
+  const panel = document.getElementById('opts-' + id);
+  if (panel) {
+    const range = panel.querySelector('.seg-' + key + '-slider-' + id);
+    const num = panel.querySelector('.seg-' + key + '-num-' + id);
+    if (range && !isSlider) range.value = v; // Sync slider if number changed
+    if (num && isSlider) num.value = v.toFixed(1); // Sync number if slider changed
+    if (num && !isSlider) num.value = v.toFixed(1); // Format it cleanly
+  }
+
+  // Update header times text directly
+  const row = document.getElementById('seg-row-' + id);
+  if (row) {
+    const t = row.querySelector('.seg-times');
+    if (t) t.innerHTML = fmtF(s.start) + ' → ' + fmtF(s.end) + ' <span class="seg-dur">(' + fmtF(s.end - s.start) + ')</span>';
+  }
+}
+
+// Used for the infinite loop toggle to preserve open menu state when forcing a full DOM re-render
+function updateSegToggle(id,k,v){
+  const wasOpen=document.getElementById('opts-'+id)&&document.getElementById('opts-'+id).classList.contains('open');
+  updateSeg(id,k,v);
+  renderTimeline();renderSegs();
+  if(wasOpen){const el=document.getElementById('opts-'+id);if(el)el.classList.add('open');}
+}
+
+function toggleSegOptions(id) {
+  const el = document.getElementById('opts-'+id);
+  if(el) el.classList.toggle('open');
+}
+
+function testVol(id) {
+  const s = segs.find(x=>x.id===id);
+  if(!s) return;
+  applyVolume(s.vol);
+  seekTo(s.start);
+  playMedia();
+  setTimeout(()=>pauseMedia(), 2000);
+}
+
+function renderTimeline(){
+  const bars=document.getElementById('segBars'),mks=document.getElementById('markers');
+  bars.innerHTML='';mks.innerHTML='';
+  segs.forEach((s,i)=>{
+    const bar=document.createElement('div');
+    bar.className='tl-seg-bar';
+    bar.style.cssText=`left:${pct(s.start)}%;width:${Math.max(0,pct(s.end)-pct(s.start))}%;background:${s.color};opacity:0.45`;
+    bars.appendChild(bar);
+    [['start','▶'],['end','■']].forEach(([k,sym])=>{
+      const mk=document.createElement('div');mk.className='tl-marker';
+      mk.style.cssText=`left:${pct(s[k])}%;background:${s.color}`;
+      const lbl=document.createElement('div');lbl.className='tl-marker-lbl';
+      lbl.style.background=s.color;lbl.textContent=(i+1)+sym;mk.appendChild(lbl);mks.appendChild(mk);
+    });
+  });
+  if(pending){
+    const mk=document.createElement('div');mk.className='tl-marker';
+    mk.style.cssText=`left:${pct(pending.start)}%;background:#888`;
+    const lbl=document.createElement('div');lbl.className='tl-marker-lbl';
+    lbl.style.background='#888';lbl.textContent='▶?';mk.appendChild(lbl);mks.appendChild(mk);
+  }
+}
+
+function renderSegs(){
+  const card=document.getElementById('segCard'),list=document.getElementById('segList');
+  if(!segs.length){card.style.display='none';return;}
+  card.style.display='block';list.innerHTML='';
+  segs.forEach((s,i)=>{
+    const d=document.createElement('div');d.className='seg-row';d.id='seg-row-'+s.id;
+    d.innerHTML=`
+      <div class="seg-header">
+        <div class="seg-num" style="background:${s.color}">${i+1}</div>
+        <div class="seg-info">
+          <input class="seg-name-input" type="text" value="${(s.name||'Segment '+(i+1)).replace(/"/g,'&quot;')}" placeholder="Segment ${i+1}" oninput="updateSeg('${s.id}','name',this.value)" title="Click to rename">
+          <div class="seg-times">${fmtF(s.start)} → ${fmtF(s.end)} <span class="seg-dur">(${fmtF(s.end-s.start)})</span></div>
+          <div class="loop-ctrl">
+            <svg class="ic" style="width:13px;height:13px;flex-shrink:0" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+            <label style="display:flex;align-items:center;gap:4px;margin:0;cursor:pointer">
+              <input type="checkbox" ${s.infinite?'checked':''} onchange="updateSegToggle('${s.id}','infinite',this.checked)"> ${tr('forever')}
+            </label>
+            ${!s.infinite?`<span style="color:var(--ink4)">${tr('orTimes')}</span><div><input type="number" min="1" value="${s.loops}" oninput="updateSeg('${s.id}','loops',Math.max(1,+this.value))"><span class="sub-label">${tr('loopTimes')}</span></div>`:''}
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <button class="btn btn-danger btn-sm btn-icon" onclick="removeSeg('${s.id}')" title="Remove">✕</button>
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="toggleSegOptions('${s.id}')" title="Settings">⚙</button>
+        </div>
+      </div>
+      <div id="opts-${s.id}" class="seg-ctrls-wrap">
+        <div class="ctrl-group">
+          <span class="ctrl-label">${tr('moveSeg')}</span>
+          
+          <div class="slider-row">
+            <span class="slider-val">Start</span>
+            <input type="range" min="0" max="${dur}" step="0.1" value="${s.start}" class="seg-start-slider-${s.id}" oninput="syncSegTimes('${s.id}', 'start', this.value, true)">
+            <input type="number" min="0" max="${dur}" step="0.1" value="${parseFloat(s.start).toFixed(1)}" class="seg-start-num-${s.id}" style="width:65px; padding:4px; margin-left:4px;" onchange="syncSegTimes('${s.id}', 'start', this.value, false)">
+          </div>
+          
+          <div class="slider-row" style="margin-top:8px;">
+            <span class="slider-val">End</span>
+            <input type="range" min="0" max="${dur}" step="0.1" value="${s.end}" class="seg-end-slider-${s.id}" oninput="syncSegTimes('${s.id}', 'end', this.value, true)">
+            <input type="number" min="0" max="${dur}" step="0.1" value="${parseFloat(s.end).toFixed(1)}" class="seg-end-num-${s.id}" style="width:65px; padding:4px; margin-left:4px;" onchange="syncSegTimes('${s.id}', 'end', this.value, false)">
+          </div>
+          
+        </div>
+        <div class="ctrl-group" style="margin-top:12px; padding-top:12px; border-top:1px dotted var(--border2);">
+          <span class="ctrl-label">${tr('advSettings')}</span>
+          <div class="slider-row">
+            <span class="slider-val">Vol %</span>
+            <input type="range" min="0" max="100" value="${s.vol!==undefined?s.vol:100}" oninput="document.getElementById('vol-${s.id}').textContent=this.value+'%'; updateSeg('${s.id}','vol',parseInt(this.value));">
+            <span class="slider-val" id="vol-${s.id}">${s.vol!==undefined?s.vol:100}%</span>
+            <button class="btn btn-ghost btn-sm" onclick="testVol('${s.id}')">${tr('testVol')}</button>
+          </div>
+          <div class="slider-row" style="margin-top:8px;">
+            <span class="slider-val">Pause (s)</span>
+            <input type="number" min="0" step="0.5" value="${s.pause||0}" oninput="updateSeg('${s.id}','pause',parseFloat(this.value))" style="width:60px;">
+          </div>
+        </div>
+      </div>
+      `;
+    list.appendChild(d);
+  });
+}
+
+function setStatus(txt,type){
+  const el=document.getElementById('status');el.textContent=txt;
+  el.className='status-bar'+(type==='playing'?' playing':type==='err'?' err':'');
+}
+
+function applyVolume(vol) {
+  let v = Math.max(0, Math.min(100, vol)) / 100;
+  if(med) med.volume = v;
+  else if(isYT && window._yt) window._yt.setVolume(vol);
+}
+
+function playMedia(){if(med)med.play().catch(e=>setStatus('Playback error: '+e.message,'err'));else if(isYT&&window._yt)window._yt.playVideo();}
+function pauseMedia(){if(med)med.pause();else if(isYT&&window._yt)window._yt.pauseVideo();}
+function seekMedia(t){if(med)med.currentTime=t;else if(isYT&&window._yt)window._yt.seekTo(t,true);}
+
+function togglePlay(){
+  if(playState&&playState.playing){pauseAll();return;}
+  if(!segs.length){setStatus(tr('addOne'),'err');return;}
+  playState={idx:0,count:0,playing:true,isWaiting:false};
+  playSeg(0);
+  document.getElementById('playIcon').innerHTML='<rect x="6" y="4" width="4" height="16" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" fill="currentColor" stroke="none"/>';
+}
+
+function playSeg(i){
+  if(!playState||i>=segs.length){stopAll();return;}
+  playState.idx=i;playState.count=0;playState.isWaiting=false;
+  const s = segs[i];
+  
+  applyVolume(s.vol !== undefined ? s.vol : 100);
+  setStatus(tr('playingSeg').replace('{name}', s.name || ('Segment '+(i+1))), 'playing');
+  seekMedia(s.start);setTimeout(()=>playMedia(),80);
+  if(med&&!isYT){if(raf)cancelAnimationFrame(raf);raf=requestAnimationFrame(rafLoop);}
+}
+function rafLoop(){if(!playState||!playState.playing||!med)return;onTick();raf=requestAnimationFrame(rafLoop);}
+function toggleRepeatAll(v){repeatAll=v;}
+
+let pauseTimeout = null;
+function checkSeg(t){
+  if(!playState || playState.isWaiting)return;
+  const s=segs[playState.idx];if(!s)return;
+  if(t>=s.end-0.12){
+    const loop=s.infinite||(playState.count+1<s.loops);
+    if(loop){playState.count++;seekMedia(s.start);playMedia();}
+    else{
+      // Advance logic with pauses
+      const nx=playState.idx+1;
+      const willPlayNext = nx < segs.length || repeatAll;
+      
+      if(s.pause > 0 && willPlayNext) {
+        playState.isWaiting = true;
+        pauseMedia();
+        setStatus(tr('waitMsg').replace('{s}', s.pause));
+        pauseTimeout = setTimeout(() => {
+          if(!playState || !playState.playing) return;
+          if(nx<segs.length){playSeg(nx);}
+          else if(repeatAll){playSeg(0);}
+        }, s.pause * 1000);
+      } else {
+        if(nx<segs.length){playSeg(nx);}
+        else if(repeatAll){playSeg(0);}
+        else{stopAll();}
+      }
+    }
+  }
+}
+function pauseAll(){
+  if(playState)playState.playing=false;pauseMedia();
+  if(pauseTimeout) clearTimeout(pauseTimeout);
+  if(raf)cancelAnimationFrame(raf);
+  document.getElementById('playIcon').innerHTML='<polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/>';
+  setStatus(tr('paused'));
+}
+function stopAll(){
+  playState=null;pauseMedia();
+  if(pauseTimeout) clearTimeout(pauseTimeout);
+  if(raf)cancelAnimationFrame(raf);
+  document.getElementById('playIcon').innerHTML='<polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/>';
+  setStatus(tr('stopped'));
+}
+
+
+/* ======================================================
+   CONFIG — paste your keys here after following SETUP.md
+   ====================================================== */
+const CONFIG = {
+  // Supabase — from Project Settings → API
+  SUPABASE_URL:    'https://pygjhhhjlfrufoqtxhyf.supabase.co',      
+  SUPABASE_ANON:   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5Z2poaGhqbGZydWZvcXR4aHlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MDM0NDEsImV4cCI6MjA5NDQ3OTQ0MX0.vhoydPQQkwG_uHuSxuOxxMS_zUFO-L13atZNQnWIymw',
+
+  // EmailJS — from emailjs.com dashboard
+  EMAILJS_SERVICE: 'service_eulvjlf',     
+  EMAILJS_TEMPLATE:'template_qskjz2o',    
+  EMAILJS_KEY:     'd8fM_laF2ZM3kyeTF',     
+
+  ADMIN_EMAIL: 'epiczuper@gmail.com',
+};
+/* ====================================================== */
+
+(function checkConfig() {
+  const missing = Object.values(CONFIG).some(v => v.startsWith('PASTE_'));
+  if (missing) document.getElementById('configBanner').classList.add('show');
+})();
+
+const SUPABASE_HEADERS = () => ({
+  'Content-Type': 'application/json',
+  'apikey': CONFIG.SUPABASE_ANON,
+  'Authorization': 'Bearer ' + CONFIG.SUPABASE_ANON,
+  'Prefer': 'return=representation'
+});
+
+const SB = CONFIG.SUPABASE_URL + '/rest/v1';
+const isConfigured = () => !CONFIG.SUPABASE_URL.startsWith('PASTE_');
+
+/* ---- Star selector ---- */
+document.getElementById('starSelector').addEventListener('click', e => {
+  if(e.target.tagName==='SPAN') {
+    currentRating = parseInt(e.target.dataset.val);
+    const spans = document.getElementById('starSelector').querySelectorAll('span');
+    spans.forEach((sp, i) => { sp.textContent = i < currentRating ? '★' : '☆'; });
+  }
+});
+
+/* ---- Rate limiting (local, per device) ---- */
+function canPostComment() {
+  const h = JSON.parse(localStorage.getItem('loopmark_cmt_history')) || { count:0, firstPostTime:0 };
+  if(Date.now() - h.firstPostTime > 12*60*60*1000) { h.count=0; h.firstPostTime=Date.now(); }
+  return h.count < 5;
+}
+function recordPost() {
+  const h = JSON.parse(localStorage.getItem('loopmark_cmt_history')) || { count:0, firstPostTime:Date.now() };
+  if(Date.now() - h.firstPostTime > 12*60*60*1000) { h.count=0; h.firstPostTime=Date.now(); }
+  h.count++;
+  localStorage.setItem('loopmark_cmt_history', JSON.stringify(h));
+}
+
+
+async function initiateDownload(quality) {
+  const url = document.getElementById('urlIn').value;
+  const btn = event.target;
+  const originalText = btn.textContent;
+  
+  btn.textContent = "Checking video...";
+  btn.disabled = true;
+
+  try {
+    // 1. Check if the quality actually exists first
+    const checkRes = await fetch('/.netlify/functions/check-video', {
+      method: 'POST',
+      body: JSON.stringify({ url })
+    });
+    const videoData = await checkRes.json();
+
+    if (!videoData.success) throw new Error("Could not verify video.");
+    if (quality === '4K' && !videoData.has4K) throw new Error("4K is not available for this video.");
+
+    // 2. If it's the paid 4K tier, send them to Stripe
+    if (quality === '4K') {
+      btn.textContent = "Redirecting to secure checkout...";
+      const stripeRes = await fetch('/.netlify/functions/create-checkout', {
+        method: 'POST',
+        body: JSON.stringify({ url, quality, title: videoData.title })
+      });
+      
+      const { url: stripeUrl } = await stripeRes.json();
+      window.location.href = stripeUrl; // Send them to Stripe to pay!
+    } 
+    // 3. If it's a free tier (MP3, 1080p), start the free download process
+    else {
+       btn.textContent = "Processing free download...";
+       // Here you would trigger your free download backend logic
+    }
+
+  } catch (err) {
+    alert(err.message);
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+
+/* ---- Post a comment ---- */
+async function postComment() {
+  const name = document.getElementById('commentName').value.trim() || 'Anonymous';
+  const text = document.getElementById('commentText').value.trim();
+  const errEl = document.getElementById('commentError');
+  errEl.textContent = '';
+
+  if(!text) { errEl.textContent = "Please write a comment."; return; }
+  if(text.length > 3000) { errEl.textContent = "Comment exceeds 3000 characters."; return; }
+  if(!canPostComment()) { errEl.textContent = "You've reached 5 comments for this 12-hour window."; return; }
+
+  // Name lock: prevent someone from changing their name after first post
+  const savedName = localStorage.getItem('loopmark_myname');
+  if(name !== 'Anonymous' && name !== 'Admin') {
+    if(!savedName) localStorage.setItem('loopmark_myname', name);
+    else if(savedName !== name) { errEl.textContent = `Post as "${savedName}" or Anonymous.`; return; }
+  }
+
+  const btn = document.querySelector('[onclick="postComment()"]');
+  btn.disabled = true; btn.textContent = 'Posting…';
+
+  if(isConfigured()) {
+    try {
+      const res = await fetch(`${SB}/comments`, {
+        method: 'POST',
+        headers: SUPABASE_HEADERS(),
+        body: JSON.stringify({ name, text, rating: currentRating, image_url: attachedImageDataUrl || null })
+      });
+      if(!res.ok) {
+        const err = await res.json();
+        if(err.code === '23505') { errEl.textContent = "That exact comment already exists."; }
+        else { errEl.textContent = "Could not post: " + (err.message || res.status); }
+        btn.disabled=false; btn.textContent='Post Feedback'; return;
+      }
+      recordPost();
+      document.getElementById('commentText').value = '';
+      attachedImageDataUrl = null; renderImgPreview(); updateCharCount();
+      await loadComments();
+    } catch(e) {
+      errEl.textContent = "Network error — comment not saved.";
+    }
+  } else {
+    const localCmts = JSON.parse(localStorage.getItem('loopmark_cmts_local')||'[]');
+    localCmts.unshift({ id:uid(), name, text, rating:currentRating, image_url: attachedImageDataUrl||null, likes:0, created_at:new Date().toISOString() });
+    localStorage.setItem('loopmark_cmts_local', JSON.stringify(localCmts));
+    recordPost();
+    document.getElementById('commentText').value = '';
+    attachedImageDataUrl = null; renderImgPreview(); updateCharCount();
+    renderComments(localCmts);
+  }
+
+  btn.disabled=false; btn.textContent='Post Feedback';
+}
+
+/* ---- Load comments from Supabase ---- */
+async function loadComments() {
+  const list = document.getElementById('commentsList');
+  if(!isConfigured()) {
+    const localCmts = JSON.parse(localStorage.getItem('loopmark_cmts_local')||'[]');
+    renderComments(localCmts);
+    return;
+  }
+  list.innerHTML = '<div class="cmt-loading">Loading comments…</div>';
+  try {
+    const res = await fetch(`${SB}/comments?order=created_at.desc&limit=50`, {
+      headers: { 'apikey': CONFIG.SUPABASE_ANON, 'Authorization': 'Bearer ' + CONFIG.SUPABASE_ANON }
+    });
+    if(!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    renderComments(data);
+  } catch(e) {
+    list.innerHTML = '<div class="cmt-loading" style="color:var(--red)">Could not load comments. Check your Supabase config.</div>';
+  }
+}
+
+/* ---- Like a comment ---- */
+async function likeComment(id, currentLikes) {
+  const likedKey = 'loopmark_liked_' + id;
+  if(localStorage.getItem(likedKey)) return; // already liked
+  localStorage.setItem(likedKey, '1');
+
+  if(!isConfigured()) return;
+  await fetch(`${SB}/comments?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: SUPABASE_HEADERS(),
+    body: JSON.stringify({ likes: currentLikes + 1 })
+  });
+  await loadComments();
+}
+
+/* ---- Report a comment ---- */
+async function reportComment(id, name, text) {
+  const confirmReport = confirm("Report this comment as abusive?");
+  if(!confirmReport) return;
+
+  if(CONFIG.EMAILJS_KEY.startsWith('PASTE_')) {
+    alert("EmailJS not configured yet — see SETUP.md to enable email reports.");
+    return;
+  }
+
+  // Load EmailJS on demand
+  if(!window.emailjs) {
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+    emailjs.init({ publicKey: CONFIG.EMAILJS_KEY });
+  }
+
+  try {
+    await emailjs.send(CONFIG.EMAILJS_SERVICE, CONFIG.EMAILJS_TEMPLATE, {
+      to_email: CONFIG.ADMIN_EMAIL,
+      report_id: id,
+      reported_name: name,
+      reported_text: text,
+      reported_at: new Date().toLocaleString(),
+      page_url: location.href
+    });
+    alert("Report sent to admin. Thank you.");
+  } catch(e) {
+    alert("Could not send report: " + (e.text || e.message || JSON.stringify(e)));
+  }
+}
+
+/* ---- Delete a comment (admin only, password-protected) ---- */
+async function deleteComment(id) {
+  if(!requireAdminAuth()) return;
+  if(!confirm("Delete this comment?")) return;
+  if(isConfigured()) {
+    await fetch(`${SB}/comments?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: SUPABASE_HEADERS()
+    });
+    await loadComments();
+  } else {
+    let localCmts = JSON.parse(localStorage.getItem('loopmark_cmts_local')||'[]');
+    localCmts = localCmts.filter(c=>c.id!==id);
+    localStorage.setItem('loopmark_cmts_local', JSON.stringify(localCmts));
+    renderComments(localCmts);
+  }
+}
+
+/* ---- Render comments list ---- */
+function renderComments(cmts) {
+  const list = document.getElementById('commentsList');
+
+  document.getElementById('cmtCount').textContent = cmts.length ? cmts.length + ' comment' + (cmts.length!==1?'s':'') : '';
+
+  if(!cmts.length) {
+    list.innerHTML = '<div class="cmt-loading">No comments yet — be the first!</div>';
+    return;
+  }
+  list.innerHTML = '';
+  cmts.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'comment-box';
+    const stars = '★'.repeat(c.rating||0) + '☆'.repeat(5-(c.rating||0));
+    const liked = localStorage.getItem('loopmark_liked_'+c.id);
+    const likes = c.likes || 0;
+    const ts = c.created_at ? timeAgo(new Date(c.created_at).getTime()) : '';
+    const safeText = (c.text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const safeName = (c.name||'Anonymous').replace(/</g,'&lt;');
+    const imgHtml = c.image_url ? `<img class="comment-img" src="${c.image_url}" alt="attached image" loading="lazy">` : '';
+    d.innerHTML = `
+      <div class="comment-header">
+        <span class="comment-author">${safeName} <span style="color:#f5c518;margin-left:6px">${stars}</span></span>
+        <span class="comment-meta">${ts}</span>
+      </div>
+      <div class="comment-text">${safeText}</div>
+      ${imgHtml}
+      <div class="comment-actions">
+        <button class="like-btn ${liked?'liked':''}" onclick="likeComment('${c.id}',${likes})">♥ ${likes}</button>
+        <button onclick="reportComment('${c.id}','${safeName}',\`${safeText.replace(/`/g,"'")}\`)">Report</button>
+        <button class="btn-admin-delete" onclick="deleteComment('${c.id}')">🗑 Delete</button>
+      </div>
+    `;
+    list.appendChild(d);
+  });
+}
+
+// Load on start
+loadComments();
+
+/* ---- PWA & Installation ---- */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  });
+}
+let deferredInstall=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredInstall=e;
+  document.getElementById('installBanner').classList.add('visible');
+});
+function forceInstallPrompt() {
+  if (deferredInstall) {
+    document.getElementById('installBanner').classList.add('visible');
+  } else {
+    alert("To install the app, click the install icon in your browser's address bar, or use 'Add to Home Screen' on mobile.");
+  }
+}
+document.getElementById('installBtn').onclick=async()=>{
+  if(!deferredInstall)return;
+  deferredInstall.prompt();
+  const{outcome}=await deferredInstall.userChoice;
+  if(outcome==='accepted')document.getElementById('installBanner').classList.remove('visible');
+  deferredInstall=null;
+};
+window.addEventListener('appinstalled',()=>{
+  document.getElementById('installBanner').classList.remove('visible');
+});
+
+/* ---- INIT ---- */
+loadPrefs();
+applyTranslations(); // apply default or saved language
+renderHistory();
+</script>
+</body>
+</html>
