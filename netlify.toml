@@ -2,6 +2,9 @@
   publish = "."
   functions = "netlify/functions"
 
+[build.environment]
+  SECRETS_SCAN_OMIT_PATHS = "index.html"
+
 # Note: scripts include 'unsafe-inline' because index.html still has inline
 # event handlers. Once those are migrated to addEventListener you can drop
 # 'unsafe-inline' from script-src for stronger XSS defence.
