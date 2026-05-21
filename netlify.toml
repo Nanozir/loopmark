@@ -4,6 +4,7 @@
 
 [build.environment]
   SECRETS_SCAN_OMIT_PATHS = "index.html"
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,ADMIN_TOKEN"
 
 # Note: scripts include 'unsafe-inline' because index.html still has inline
 # event handlers. Once those are migrated to addEventListener you can drop

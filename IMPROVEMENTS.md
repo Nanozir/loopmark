@@ -8,8 +8,8 @@ This document tracks the security, accessibility, and quality changes from the 2
 
 ### Critical security
 - **Disabled the broken $1 4K download tier.** The buttons are now visibly disabled with a "coming soon" tooltip, and `success.html` no longer simulates a download. The old success page would have let anyone with a crafted URL "claim" a download without paying.
-- **Removed the hardcoded admin password** (`LoopmarkAdmin07`) from `index.html`. Admin actions now go through a new Netlify function (`admin-delete-comment.js`) that checks `ADMIN_TOKEN` from server env vars and uses the Supabase service-role key to actually delete.
-- **Removed `ADMIN_EMAIL: 'epiczuper@gmail.com'`** from public source. Move the destination email into your EmailJS template's "To Email" field instead — see "Open items" below.
+- **Removed the hardcoded admin password** from `index.html`. Admin actions now go through a new Netlify function (`admin-delete-comment.js`) that checks `ADMIN_TOKEN` from server env vars and uses the Supabase service-role key to actually delete.
+- **Removed the admin email address** from public source. Move the destination email into your EmailJS template's "To Email" field instead — see "Open items" below.
 - **Stripe success_url no longer carries the YouTube URL** as a query parameter. The URL is stashed in the Stripe session `metadata` server-side. A new `verify-session.js` function retrieves it after confirming `payment_status === 'paid'`. Use this function once the real download backend is live.
 - **XSS hardening of comment rendering.** The old `renderComments()` interpolated user input into a JS template literal inside an `onclick` HTML attribute — a comment containing `${alert(1)}` could escape and execute. The new version uses `createElement` + `textContent` and a single delegated click listener.
 - **Comment image whitelist.** `<img src>` is now restricted to `data:image/(jpeg|png|gif|webp)` or `https?://` — `data:image/svg+xml` (which can carry script) is rejected.
@@ -57,7 +57,7 @@ I've ranked these by urgency. Items 1–4 should happen before you accept any mo
 
 **Anon key:** the value committed in `index.html` is *meant* to be public, but if you'd prefer a fresh one, regenerate it in Supabase → Settings → API. The new key needs to be pasted into the `CONFIG.SUPABASE_ANON` line.
 
-**Admin password (`LoopmarkAdmin07`):** assume it's compromised. It's been in your public Git history. Pick a new long random `ADMIN_TOKEN` (e.g. `openssl rand -hex 32`) and set it as a Netlify env var.
+**Admin password:** assume it's compromised. It's been in your public Git history. Pick a new long random `ADMIN_TOKEN` (e.g. `openssl rand -hex 32`) and set it as a Netlify env var.
 
 **Service-role key:** generate or note your Supabase service-role key (Settings → API → `service_role` secret) and set it as `SUPABASE_SERVICE_ROLE_KEY` in Netlify.
 
