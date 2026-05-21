@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Payment Successful — LoopMark</title>
+<meta name="robots" content="noindex,nofollow">
+<title>Order Received — LoopMark</title>
+<link rel="canonical" href="https://loopmark.se/success.html">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* Using LoopMark's exact design system */
 :root {
   --ink:#0d0d0d; --ink2:#444; --ink3:#888;
   --paper:#f7f5f0; --card:#ffffff; --card2:#f0ede8;
@@ -16,65 +17,51 @@
   --head:'Syne',sans-serif;
 }
 @media(prefers-color-scheme:dark){
-  body {
+  :root {
     --ink:#f0efe8; --ink2:#aaa; --ink3:#777;
     --paper:#111110; --card:#1c1c1a; --card2:#252522;
     --border:#2e2e2a;
   }
 }
 body { font-family:var(--head); background:var(--paper); color:var(--ink); min-height:100vh; display:flex; align-items:center; justify-content:center; margin:0; padding:20px; }
-.card { background:var(--card); border:1px solid var(--border); border-radius:var(--rl); padding:40px 30px; text-align:center; max-width:400px; width:100%; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+.card { background:var(--card); border:1px solid var(--border); border-radius:var(--rl); padding:40px 30px; text-align:center; max-width:440px; width:100%; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
 .success-icon { width:64px; height:64px; background:var(--green); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; }
-h1 { margin:0 0 10px; font-size:24px; font-weight:800; letter-spacing:-0.5px; }
-p { font-size:14px; color:var(--ink2); line-height:1.5; margin-bottom:24px; }
+h1 { margin:0 0 10px; font-size:22px; font-weight:800; letter-spacing:-0.5px; }
+p { font-size:14px; color:var(--ink2); line-height:1.5; margin-bottom:18px; }
 .btn { font-family:var(--head); font-size:14px; font-weight:700; padding:12px 24px; cursor:pointer; border-radius:var(--r); border:none; background:var(--accent); color:#fff; text-decoration:none; display:inline-block; transition:transform 0.15s; }
 .btn:active { transform:scale(0.95); }
-.status-box { background:var(--card2); border-radius:var(--r); padding:16px; font-family:var(--mono); font-size:12px; color:var(--ink3); margin-bottom:24px; word-break:break-all; }
+.status-box { background:var(--card2); border-radius:var(--r); padding:14px; font-family:var(--mono); font-size:11px; color:var(--ink3); margin-bottom:18px; word-break:break-all; }
+.session-id { color:var(--ink2); font-weight:500; }
 </style>
 </head>
 <body>
 
 <div class="card">
-  <div class="success-icon">
+  <div class="success-icon" aria-hidden="true">
     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
   </div>
-  <h1>Payment Successful!</h1>
-  <p>Thank you for supporting LoopMark. Your high-quality 4K video is ready for extraction.</p>
-  
-  <div class="status-box" id="urlDisplay">Locating your video...</div>
+  <h1 id="title">Order received</h1>
+  <p id="copy">Thank you. Your order is being reviewed and you will receive an email when it is ready. The 4K video pipeline is currently in beta — if you reached this page in error, please contact support and we will refund you.</p>
 
-  <button class="btn" id="downloadBtn" onclick="startFinalDownload()">Start 4K Download</button>
-  
-  <div style="margin-top:20px;">
-    <a href="/" style="color:var(--ink3); font-size:12px; text-decoration:none;">← Return to LoopMark</a>
-  </div>
+  <div class="status-box" id="urlDisplay">Verifying session…</div>
+
+  <a class="btn" href="/">Return to LoopMark</a>
 </div>
 
 <script>
-  // 1. Grab the YouTube URL that we passed through the Stripe checkout
-  const urlParams = new URLSearchParams(window.location.search);
-  const targetUrl = urlParams.get('url');
-  
-  if (targetUrl) {
-    document.getElementById('urlDisplay').textContent = "Target: " + targetUrl;
+  // Show the Stripe session id (read-only, non-sensitive) so the user can quote it
+  // when contacting support. We do NOT trust any URL parameter to deliver content;
+  // download fulfilment must happen server-side via /.netlify/functions/verify-session
+  // (see netlify/functions/verify-session.js).
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('session_id');
+  const box = document.getElementById('urlDisplay');
+
+  if (sessionId && /^cs_(test|live)_[A-Za-z0-9]+$/.test(sessionId)) {
+    box.innerHTML = 'Reference: <span class="session-id"></span>';
+    box.querySelector('.session-id').textContent = sessionId;
   } else {
-    document.getElementById('urlDisplay').textContent = "Error: Could not locate target URL.";
-    document.getElementById('downloadBtn').style.display = 'none';
-  }
-
-  // 2. Trigger the final download
-  function startFinalDownload() {
-    const btn = document.getElementById('downloadBtn');
-    btn.textContent = "Processing... (This takes a minute)";
-    btn.style.opacity = "0.7";
-    btn.style.pointerEvents = "none";
-
-    // Because processing 4K video takes a long time, we simulate the wait here.
-    // In a full production environment, this is where you would call your final Netlify Function to run yt-dlp.
-    setTimeout(() => {
-      alert("Success! In a live environment, the .mp4 file would now drop into your browser's download folder.");
-      btn.textContent = "✓ Download Complete";
-    }, 3000);
+    box.textContent = 'No valid Stripe session reference was found in the URL.';
   }
 </script>
 </body>
