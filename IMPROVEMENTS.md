@@ -78,7 +78,7 @@ In Netlify → Site settings → Environment variables, add:
 ```
 STRIPE_SECRET_KEY            sk_test_...     (or sk_live_... when ready)
 SITE_URL                     https://loopmark.se
-SUPABASE_URL                 https://pygjhhhjlfrufoqtxhyf.supabase.co
+SUPABASE_URL                 https://your-project-ref.supabase.co
 SUPABASE_SERVICE_ROLE_KEY    <from Supabase API settings>
 ADMIN_TOKEN                  <a long random string>
 ```
