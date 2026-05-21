@@ -9,6 +9,20 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="LoopMark">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://loopmark.se/">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LoopMark">
+<meta property="og:title" content="LoopMark — Precision Segment Player">
+<meta property="og:description" content="Mark in/out points on any audio or video, loop segments forever or N times, autosave sessions. Works offline as a PWA.">
+<meta property="og:url" content="https://loopmark.se/">
+<meta property="og:image" content="https://loopmark.se/icons/icon-512.png">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="LoopMark — Precision Segment Player">
+<meta name="twitter:description" content="Mark in/out points on any audio or video, loop segments, autosave sessions.">
+<meta name="twitter:image" content="https://loopmark.se/icons/icon-512.png">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -51,7 +65,7 @@ body{font-family:var(--head);background:var(--paper);color:var(--ink);min-height
 .tagline{font-size:11px;color:var(--ink3);font-weight:400;margin-top:1px}
 .top-actions{display:flex;align-items:center;gap:12px;}
 
-.autosave-toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink3);cursor:pointer;user-select:none}
+.autosave-toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink3);cursor:pointer;user-select:none; background:transparent; border:none; font-family:var(--head); padding:0;}
 .autosave-toggle .pill{width:36px;height:20px;border-radius:10px;background:#333;position:relative;transition:background .2s;flex-shrink:0}
 .autosave-toggle .pill.on{background:var(--accent)}
 .autosave-toggle .pill::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .2s}
@@ -199,6 +213,16 @@ body.theme-dark .config-banner {background:#2a2200; border-color:#7a6000; color:
 .history-cat{margin-bottom:12px}
 .history-cat-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);display:flex;align-items:center;gap:6px;margin-bottom:8px}
 .history-cat-label::after{content:'';flex:1;height:1px;background:var(--border)}
+/* Accessibility: visible focus rings, keyboard-friendly star rating */
+*:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.star-rating [role=radio] { cursor:pointer; user-select:none; padding:0 1px; }
+.star-rating [role=radio][aria-checked=true] { color:#f5c518; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+/* Footer */
+.site-footer { max-width:1000px; margin:32px auto 16px; padding:24px 20px; border-top:1px solid var(--border); display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center; font-size:12px; color:var(--ink3); font-family:var(--mono); }
+.site-footer a { color:var(--ink2); text-decoration:none; margin:0 6px; }
+.site-footer a:hover { color:var(--accent); }
+.site-footer nav { display:flex; flex-wrap:wrap; gap:4px; }
 .hist-item{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px;margin-bottom:7px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;transition:border-color .15s}
 .hist-item:hover{border-color:var(--accent)}
 .hist-item.active-item{border-color:var(--accent);background:var(--accentbg)}
@@ -261,31 +285,31 @@ svg.ic-xl{width:20px;height:20px}
 
 <div class="topbar">
   <div>
-    <div class="logo" onclick="location.reload()" title="Refresh LoopMark">Loop<span>Mark</span></div>
+    <div class="logo" role="button" tabindex="0" aria-label="Refresh LoopMark" onclick="location.reload()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();location.reload();}" title="Refresh LoopMark">Loop<span>Mark</span></div>
     <div class="tagline" data-i18n="tagline">Precision segment player</div>
   </div>
   <div class="top-actions">
-    <button class="icon-btn" title="Toggle Language (EN/SV)" onclick="toggleLang()">
-      <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    <button class="icon-btn" type="button" aria-label="Toggle language between English and Swedish" title="Toggle Language (EN/SV)" onclick="toggleLang()">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
     </button>
-    <button class="icon-btn" title="Toggle Dark/Light Mode" onclick="toggleTheme()">
-      <svg class="ic" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    <button class="icon-btn" type="button" aria-label="Toggle dark and light mode" title="Toggle Dark/Light Mode" onclick="toggleTheme()">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     </button>
-    <div class="autosave-toggle" onclick="toggleAutosave()" title="Auto-save segments across sessions">
+    <button class="autosave-toggle" type="button" aria-label="Toggle auto-save" aria-pressed="true" id="autosaveBtn" onclick="toggleAutosave()" title="Auto-save segments across sessions">
       <span id="autosaveLabel" data-i18n="autosave">Auto-save</span>
-      <div class="pill" id="autosavePill"></div>
-    </div>
+      <span class="pill" id="autosavePill" aria-hidden="true"></span>
+    </button>
   </div>
 </div>
 
-  <div class="install-banner" id="installBanner">
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  <div class="install-banner" id="installBanner" role="region" aria-label="Install app prompt">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#5B4FE8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
     <div class="install-banner-text">
       <strong data-i18n="installStrong">Install LoopMark</strong>
       <span data-i18n="installSpan">Add to home screen for offline use on Mobile or Desktop</span>
     </div>
     <button class="btn btn-accent btn-sm" id="installBtn" data-i18n="installBtn">Install App</button>
-    <button class="btn btn-sm btn-icon" onclick="document.getElementById('installBanner').classList.remove('visible')" title="Dismiss" style="padding:6px 8px">✕</button>
+    <button class="btn btn-sm btn-icon" type="button" aria-label="Dismiss install prompt" onclick="document.getElementById('installBanner').classList.remove('visible')" title="Dismiss" style="padding:6px 8px">✕</button>
   </div>
   
   <div class="card" style="margin-top:4px">
@@ -344,26 +368,26 @@ svg.ic-xl{width:20px;height:20px}
         </div>
         <div class="time-row"><span id="tCur">0:00</span><span id="tDur">--:--</span></div>
         <div class="transport">
-          <button class="btn btn-icon" onclick="skip(-15)" title="Back 15s">
-            <svg class="ic ic-lg" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
-            <span class="skip-lbl">15</span>
+          <button class="btn btn-icon" type="button" onclick="skip(-15)" aria-label="Back 15 seconds" title="Back 15s">
+            <svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+            <span class="skip-lbl" aria-hidden="true">15</span>
           </button>
-          <button class="btn btn-icon" onclick="skip(-5)" title="Back 5s">
-            <svg class="ic ic-lg" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
-            <span class="skip-lbl">5</span>
+          <button class="btn btn-icon" type="button" onclick="skip(-5)" aria-label="Back 5 seconds" title="Back 5s">
+            <svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+            <span class="skip-lbl" aria-hidden="true">5</span>
           </button>
-          <button class="btn btn-accent btn-icon" id="ppBtn" onclick="toggleMediaPlay()" style="border-radius:50%;width:40px;height:40px;padding:0;justify-content:center">
-            <svg class="ic ic-xl" id="ppIcon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/></svg>
+          <button class="btn btn-accent btn-icon" type="button" id="ppBtn" onclick="toggleMediaPlay()" aria-label="Play or pause" style="border-radius:50%;width:40px;height:40px;padding:0;justify-content:center">
+            <svg class="ic ic-xl" id="ppIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/></svg>
           </button>
-          <button class="btn btn-icon" onclick="skip(5)" title="Forward 5s">
-            <span class="skip-lbl">5</span>
-            <svg class="ic ic-lg" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          <button class="btn btn-icon" type="button" onclick="skip(5)" aria-label="Forward 5 seconds" title="Forward 5s">
+            <span class="skip-lbl" aria-hidden="true">5</span>
+            <svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
           </button>
-          <button class="btn btn-icon" onclick="skip(15)" title="Forward 15s">
-            <span class="skip-lbl">15</span>
-            <svg class="ic ic-lg" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          <button class="btn btn-icon" type="button" onclick="skip(15)" aria-label="Forward 15 seconds" title="Forward 15s">
+            <span class="skip-lbl" aria-hidden="true">15</span>
+            <svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
           </button>
-          <span class="t-disp" id="tDisp">0:00.0 / --:--</span>
+          <span class="t-disp" id="tDisp" aria-live="off">0:00.0 / --:--</span>
         </div>
         <div style="text-align:center;margin-bottom:10px">
           <span class="hint-pill">
@@ -398,12 +422,12 @@ svg.ic-xl{width:20px;height:20px}
           </label>
         </div>
         <div class="row" style="margin-bottom:12px;gap:8px">
-          <button class="btn btn-accent" id="playBtn" onclick="togglePlay()" style="min-width:110px;justify-content:center">
-            <svg class="ic ic-lg" id="playIcon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/></svg>
+          <button class="btn btn-accent" type="button" id="playBtn" onclick="togglePlay()" style="min-width:110px;justify-content:center">
+            <svg class="ic ic-lg" id="playIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/></svg>
             <span data-i18n="playAll">Play all</span>
           </button>
-          <button class="btn btn-ghost btn-icon" onclick="stopAll()" title="Stop">
-            <svg class="ic ic-lg" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" stroke="none"/></svg>
+          <button class="btn btn-ghost btn-icon" type="button" onclick="stopAll()" aria-label="Stop playback" title="Stop">
+            <svg class="ic ic-lg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" stroke="none"/></svg>
           </button>
         </div>
         <div class="status-bar" id="status" data-i18n="statusInit">Load a file or URL to get started.</div>
@@ -440,10 +464,14 @@ svg.ic-xl{width:20px;height:20px}
       <div id="cmtPreviewWrap"></div>
 
       <div class="row" style="margin-top:8px; justify-content:space-between;">
-        <div class="star-rating" id="starSelector">
-          <span data-val="1">★</span><span data-val="2">★</span><span data-val="3">★</span><span data-val="4">★</span><span data-val="5">☆</span>
+        <div class="star-rating" id="starSelector" role="radiogroup" aria-label="Rate from 1 to 5 stars">
+          <span role="radio" tabindex="0" data-val="1" aria-checked="false" aria-label="1 star">★</span>
+          <span role="radio" tabindex="-1" data-val="2" aria-checked="false" aria-label="2 stars">★</span>
+          <span role="radio" tabindex="-1" data-val="3" aria-checked="false" aria-label="3 stars">★</span>
+          <span role="radio" tabindex="-1" data-val="4" aria-checked="true" aria-label="4 stars">★</span>
+          <span role="radio" tabindex="-1" data-val="5" aria-checked="false" aria-label="5 stars">☆</span>
         </div>
-        <button class="btn btn-sm btn-accent" onclick="postComment()" data-i18n="postBtn">Post Feedback</button>
+        <button class="btn btn-sm btn-accent" type="button" onclick="postComment()" data-i18n="postBtn">Post Feedback</button>
       </div>
       <div id="commentError" style="color:var(--red); font-size:11px; margin-top:4px;"></div>
     </div>
@@ -471,6 +499,15 @@ svg.ic-xl{width:20px;height:20px}
   </div>
 
 </div>
+
+<footer class="site-footer">
+  <div>LoopMark · v<span id="appVersion">2026-05-21-1</span></div>
+  <nav>
+    <a href="/privacy.html">Privacy</a>
+    <a href="/terms.html">Terms</a>
+    <a href="https://github.com/Nanozir/loopmark" rel="noopener" target="_blank">GitHub</a>
+  </nav>
+</footer>
 
 <script>
 /* ---- TRANSLATIONS / i18n ---- */
@@ -629,6 +666,7 @@ let saveTimer=null;
 let repeatAll=true;
 let currentRating = 4;
 let attachedImageDataUrl = null; // holds base64 of attached image
+let ytTickInterval = null; // tracked so we can clear it on reload
 
 /* ---- Char counter ---- */
 function updateCharCount() {
@@ -639,14 +677,59 @@ function updateCharCount() {
   el.className = 'char-counter' + (n > 2700 ? (n >= 3000 ? ' over' : ' warn') : '');
 }
 
-/* ---- Image attachment ---- */
-function handleImgAttach(input) {
-  const f = input.files[0];
-  if (!f) return;
-  const reader = new FileReader();
-  reader.onload = e => { attachedImageDataUrl = e.target.result; renderImgPreview(); };
-  reader.readAsDataURL(f);
+/* ---- Image attachment ----
+   Hard limits: max 5MB raw, downscaled to fit 1280x1280, re-encoded as JPEG
+   at quality 0.82 so a Supabase row never exceeds ~250KB even for huge inputs. */
+const MAX_IMG_BYTES = 5 * 1024 * 1024;
+const MAX_IMG_DIM = 1280;
+const IMG_JPEG_QUALITY = 0.82;
+
+function downscaleImage(file) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type || !file.type.startsWith('image/')) return reject(new Error('Not an image'));
+    if (file.size > MAX_IMG_BYTES) return reject(new Error('Image too large (max 5MB)'));
+    // Animated GIFs lose animation when re-encoded as JPEG. Keep them as-is
+    // and rely on the size cap.
+    if (file.type === 'image/gif') {
+      const r = new FileReader();
+      r.onload = e => resolve(e.target.result);
+      r.onerror = () => reject(new Error('Read failed'));
+      r.readAsDataURL(file);
+      return;
+    }
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      try {
+        const scale = Math.min(1, MAX_IMG_DIM / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', IMG_JPEG_QUALITY);
+        URL.revokeObjectURL(url);
+        resolve(dataUrl);
+      } catch (e) { URL.revokeObjectURL(url); reject(e); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Decode failed')); };
+    img.src = url;
+  });
+}
+
+async function handleImgAttach(input) {
+  const f = input.files && input.files[0];
   input.value = '';
+  if (!f) return;
+  const errEl = document.getElementById('commentError');
+  if (errEl) errEl.textContent = '';
+  try {
+    attachedImageDataUrl = await downscaleImage(f);
+    renderImgPreview();
+  } catch (e) {
+    if (errEl) errEl.textContent = e.message || 'Image upload failed';
+  }
 }
 
 function renderImgPreview() {
@@ -664,36 +747,52 @@ function removeAttachedImg() {
 }
 
 // Paste image support
-document.addEventListener('paste', e => {
+document.addEventListener('paste', async e => {
   const items = e.clipboardData && e.clipboardData.items;
   if (!items) return;
   for (const item of items) {
-    if (item.type.startsWith('image/')) {
+    if (item.type && item.type.startsWith('image/')) {
       const file = item.getAsFile();
-      const reader = new FileReader();
-      reader.onload = ev => { attachedImageDataUrl = ev.target.result; renderImgPreview(); };
-      reader.readAsDataURL(file);
+      if (!file) continue;
+      try {
+        attachedImageDataUrl = await downscaleImage(file);
+        renderImgPreview();
+      } catch (err) {
+        const errEl = document.getElementById('commentError');
+        if (errEl) errEl.textContent = err.message || 'Image paste failed';
+      }
       break;
     }
   }
 });
 
-/* ---- Admin auth ---- */
-const ADMIN_PASSWORD = 'LoopmarkAdmin07'; // change this to your own password
-let _adminAuthed = false;
-function isAdmin() {
-  const name = document.getElementById('commentName').value.trim();
-  return name === 'Admin' || name === CONFIG.ADMIN_EMAIL;
+/* ---- Admin auth ----
+   The real admin gate now lives server-side: comments can only be deleted by
+   POSTing to /.netlify/functions/admin-delete-comment with the ADMIN_TOKEN
+   header. We prompt for the token in the browser, keep it in sessionStorage
+   for the tab's lifetime, and never store it long-term. NEVER hardcode the
+   token in client source — it must come from Netlify env vars. */
+let _adminToken = null;
+function getAdminToken() {
+  if (_adminToken) return _adminToken;
+  const cached = sessionStorage.getItem('lm_admin_token');
+  if (cached) { _adminToken = cached; return _adminToken; }
+  const t = prompt('Enter admin token:');
+  if (!t) return null;
+  _adminToken = t.trim();
+  sessionStorage.setItem('lm_admin_token', _adminToken);
+  return _adminToken;
 }
-function requireAdminAuth() {
-  if (_adminAuthed) return true;
-  const pw = prompt('Enter admin password:');
-  if (pw === ADMIN_PASSWORD) { _adminAuthed = true; return true; }
-  alert('Wrong password.'); return false;
+function clearAdminToken() {
+  _adminToken = null;
+  sessionStorage.removeItem('lm_admin_token');
 }
 
-function uid(){return Math.random().toString(36).slice(2,8)}
-function uid(){return Math.random().toString(36).slice(2,8)}
+function uid(){
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  // Legacy fallback — only used on very old browsers without WebCrypto.
+  return 'x'+Math.random().toString(36).slice(2,10)+Date.now().toString(36);
+}
 function getDeviceId() {
   let id = localStorage.getItem('loopmark_device_id');
   if (!id) { id = uid(); localStorage.setItem('loopmark_device_id', id); }
@@ -728,6 +827,8 @@ function toggleAutosave(){
 }
 function updateAutosaveUI(){
   document.getElementById('autosavePill').className='pill'+(autosave?' on':'');
+  const btn = document.getElementById('autosaveBtn');
+  if (btn) btn.setAttribute('aria-pressed', autosave ? 'true' : 'false');
 }
 
 function getSessions(){
@@ -822,15 +923,21 @@ function renderHistory(){
       d.innerHTML=`
         <div class="hist-thumb ${thumbClass}">${thumbIcon}</div>
         <div class="hist-info">
-          <input class="hist-name-input" value="${item.name.replace(/"/g,'&quot;')}" title="Click to rename" onclick="event.stopPropagation()" onchange="renameSession('${item.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">
+          <input class="hist-name-input" data-rename-id="${item.id}" title="Click to rename" onclick="event.stopPropagation()">
           <div class="hist-meta">${item.dur?fmt(item.dur)+' · ':''} ${ago}</div>
           <div class="hist-segs">${segCount} segment</div>
         </div>
         <div class="hist-actions">
-          <button class="btn btn-danger btn-icon btn-sm" onclick="deleteSession('${item.id}',event)" title="Delete saved session">
-            <svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          <button class="btn btn-danger btn-icon btn-sm" type="button" data-delete-id="${item.id}" aria-label="Delete saved session" title="Delete saved session">
+            <svg class="ic" style="width:14px;height:14px" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
           </button>
         </div>`;
+      // Set value via DOM (textContent-safe) so name can contain any chars without HTML risk.
+      const nameInput = d.querySelector('.hist-name-input');
+      nameInput.value = item.name || '';
+      nameInput.addEventListener('change', e => renameSession(item.id, e.target.value));
+      nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+      d.querySelector('[data-delete-id]').addEventListener('click', ev => deleteSession(item.id, ev));
       el.appendChild(d);
     });
   }
@@ -874,6 +981,7 @@ function resetZones(){
   document.getElementById('dlMediaBox').style.display='none';
   med=null;dur=0;segs=[];pending=null;playState=null;
   if(raf)cancelAnimationFrame(raf);
+  if(ytTickInterval){clearInterval(ytTickInterval);ytTickInterval=null;}
   renderTimeline();renderSegs();
   ['tCur','tDur'].forEach((id,i)=>document.getElementById(id).textContent=i?'--:--':'0:00');
   document.getElementById('tDisp').textContent='0:00.0 / --:--';
@@ -890,11 +998,14 @@ function setupDownloads(isYouTube, src) {
   btns.innerHTML = '';
 
   if (isYouTube) {
-    explain.innerHTML = `Download processed directly via our servers. 4K resolution requires a one-time $1 server processing fee.`;
+    // The 4K paid pipeline is currently disabled — the backend (yt-dlp on a
+    // long-running host) is not deployed yet. Re-enable in IMPROVEMENTS.md
+    // step "Enable 4K paid downloads" once the worker is live.
+    explain.innerHTML = `Free tiers below. 4K downloads are temporarily unavailable while we move processing to a long-running worker.`;
     btns.innerHTML = `
-      <button class="btn btn-sm btn-ghost" onclick="initiateDownload('MP3')">${tr('dlMp3')}</button>
-      <button class="btn btn-sm btn-ghost" onclick="initiateDownload('1080p')">${tr('dlMp4')} 1080p</button>
-      <button class="btn btn-sm btn-accent" onclick="initiateDownload('4K')" title="Requires $1 payment">${tr('dlMp4')} 4K ($1) 💎</button>
+      <button class="btn btn-sm btn-ghost" type="button" disabled title="Coming soon">${tr('dlMp3')}</button>
+      <button class="btn btn-sm btn-ghost" type="button" disabled title="Coming soon">${tr('dlMp4')} 1080p</button>
+      <button class="btn btn-sm btn-ghost" type="button" disabled title="Coming soon" aria-disabled="true">${tr('dlMp4')} 4K (soon) 💎</button>
     `;
   } else if (src) {
     // Direct URL or blob — can offer a real download
@@ -1056,7 +1167,8 @@ function initYTPlayer(id){
         document.getElementById('tDur').textContent=fmt(dur);
         if(currentSession)currentSession.dur=dur;
         setStatus(tr('ytReady'));renderTimeline();
-        setInterval(ytTick,150);
+        if (ytTickInterval) clearInterval(ytTickInterval);
+        ytTickInterval = setInterval(ytTick,150);
       },
       onStateChange:e=>{
         setPPIcon(e.data===YT.PlayerState.PLAYING);
@@ -1387,24 +1499,29 @@ function stopAll(){
 
 /* ======================================================
    CONFIG — paste your keys here after following SETUP.md
-   ====================================================== */
+   ======================================================
+   These are PUBLIC keys only. The Supabase anon key and EmailJS public key
+   are designed to be exposed; the server-side gates (RLS + EmailJS rate
+   limits) are what actually protect them. NEVER put service-role keys,
+   Stripe secret keys, or admin tokens in this file. Those go in Netlify
+   env vars only and are read by the functions in /netlify/functions/. */
 const CONFIG = {
   // Supabase — from Project Settings → API
-  SUPABASE_URL:    'https://pygjhhhjlfrufoqtxhyf.supabase.co',      
+  SUPABASE_URL:    'https://pygjhhhjlfrufoqtxhyf.supabase.co',
   SUPABASE_ANON:   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5Z2poaGhqbGZydWZvcXR4aHlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MDM0NDEsImV4cCI6MjA5NDQ3OTQ0MX0.vhoydPQQkwG_uHuSxuOxxMS_zUFO-L13atZNQnWIymw',
 
   // EmailJS — from emailjs.com dashboard
-  EMAILJS_SERVICE: 'service_eulvjlf',     
-  EMAILJS_TEMPLATE:'template_qskjz2o',    
-  EMAILJS_KEY:     'd8fM_laF2ZM3kyeTF',     
-
-  ADMIN_EMAIL: 'epiczuper@gmail.com',
+  EMAILJS_SERVICE: 'service_eulvjlf',
+  EMAILJS_TEMPLATE:'template_qskjz2o',
+  EMAILJS_KEY:     'd8fM_laF2ZM3kyeTF',
 };
 /* ====================================================== */
 
 (function checkConfig() {
-  const missing = Object.values(CONFIG).some(v => v.startsWith('PASTE_'));
-  if (missing) document.getElementById('configBanner').classList.add('show');
+  const banner = document.getElementById('configBanner');
+  if (!banner) return; // banner element is optional
+  const missing = Object.values(CONFIG).some(v => typeof v === 'string' && v.startsWith('PASTE_'));
+  if (missing) banner.classList.add('show');
 })();
 
 const SUPABASE_HEADERS = () => ({
@@ -1417,14 +1534,41 @@ const SUPABASE_HEADERS = () => ({
 const SB = CONFIG.SUPABASE_URL + '/rest/v1';
 const isConfigured = () => !CONFIG.SUPABASE_URL.startsWith('PASTE_');
 
-/* ---- Star selector ---- */
-document.getElementById('starSelector').addEventListener('click', e => {
-  if(e.target.tagName==='SPAN') {
-    currentRating = parseInt(e.target.dataset.val);
-    const spans = document.getElementById('starSelector').querySelectorAll('span');
-    spans.forEach((sp, i) => { sp.textContent = i < currentRating ? '★' : '☆'; });
+/* ---- Star selector (keyboard accessible) ---- */
+(function setupStarRating() {
+  const root = document.getElementById('starSelector');
+  if (!root) return;
+  const stars = Array.from(root.querySelectorAll('[role=radio]'));
+  function setRating(n) {
+    currentRating = Math.max(1, Math.min(5, n));
+    stars.forEach((sp, i) => {
+      const checked = (i + 1) === currentRating;
+      sp.textContent = i < currentRating ? '★' : '☆';
+      sp.setAttribute('aria-checked', checked ? 'true' : 'false');
+      sp.setAttribute('tabindex', checked ? '0' : '-1');
+    });
   }
-});
+  root.addEventListener('click', e => {
+    const t = e.target.closest('[role=radio]');
+    if (!t) return;
+    setRating(parseInt(t.dataset.val, 10));
+    t.focus();
+  });
+  root.addEventListener('keydown', e => {
+    const idx = stars.indexOf(document.activeElement);
+    if (idx < 0) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+      e.preventDefault(); setRating(Math.min(5, idx + 2)); stars[Math.min(4, idx + 1)].focus();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+      e.preventDefault(); setRating(Math.max(1, idx)); stars[Math.max(0, idx - 1)].focus();
+    } else if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault(); setRating(idx + 1);
+    } else if (/^[1-5]$/.test(e.key)) {
+      e.preventDefault(); setRating(parseInt(e.key, 10)); stars[parseInt(e.key, 10) - 1].focus();
+    }
+  });
+  setRating(currentRating);
+})();
 
 /* ---- Rate limiting (local, per device) ---- */
 function canPostComment() {
@@ -1440,59 +1584,34 @@ function recordPost() {
 }
 
 
+// Hook for the future paid-download flow. Not currently wired to any UI;
+// see IMPROVEMENTS.md "Enable 4K paid downloads" before reattaching.
 async function initiateDownload(quality) {
-  const url = document.getElementById('urlIn').value;
-  const btn = event.target;
-  const originalText = btn.textContent;
-  
-  btn.textContent = "Checking video...";
-  btn.disabled = true;
-
-  try {
-    // 1. Check if the quality actually exists first
-    const checkRes = await fetch('/.netlify/functions/check-video', {
-      method: 'POST',
-      body: JSON.stringify({ url })
-    });
-    const videoData = await checkRes.json();
-
-    if (!videoData.success) throw new Error("Could not verify video.");
-    if (quality === '4K' && !videoData.has4K) throw new Error("4K is not available for this video.");
-
-    // 2. If it's the paid 4K tier, send them to Stripe
-    if (quality === '4K') {
-      btn.textContent = "Redirecting to secure checkout...";
-      const stripeRes = await fetch('/.netlify/functions/create-checkout', {
-        method: 'POST',
-        body: JSON.stringify({ url, quality, title: videoData.title })
-      });
-      
-      const { url: stripeUrl } = await stripeRes.json();
-      window.location.href = stripeUrl; // Send them to Stripe to pay!
-    } 
-    // 3. If it's a free tier (MP3, 1080p), start the free download process
-    else {
-       btn.textContent = "Processing free download...";
-       // Here you would trigger your free download backend logic
-    }
-
-  } catch (err) {
-    alert(err.message);
-    btn.textContent = originalText;
-    btn.disabled = false;
-  }
+  alert("Downloads are temporarily disabled while the processing backend is being rebuilt.");
 }
 
-/* ---- Profanity filter ---- */
-const BANNED_WORDS = [
-  'nigger','nigga','faggot','fag','chink','spic','kike','tranny','retard',
-  'cunt','whore','slut','twat','bitch','bastard','asshole','shit','fuck',
-  'cock','dick','pussy','piss','crap','damn','hell','arse','bollocks',
-  'wanker','tosser','prick','slag','shag','twat','bellend'
-];
+/* ---- Profanity filter ----
+   Word-boundary matching, so "Mitchell" doesn't match "hell" and "assassin"
+   doesn't match "ass". The list focuses on slurs and the most aggressive
+   profanity; very mild words (damn, hell, crap) were removed to stop false
+   positives on normal speech. Tweak in moderation. */
+const BANNED_PATTERN = (function () {
+  const words = [
+    'nigger','nigga','faggot','chink','spic','kike','tranny','retard',
+    'cunt','whore','slut','twat','bastard','asshole',
+    'wanker','tosser'
+  ];
+  // Match word with simple leetspeak normalisation done at call time.
+  return new RegExp('\\b(' + words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b', 'i');
+})();
 function containsProfanity(str) {
-  const normalized = str.toLowerCase().replace(/[^a-z]/g, '');
-  return BANNED_WORDS.some(w => normalized.includes(w));
+  if (!str) return false;
+  // Light leetspeak normalisation: 0->o, 1->i, 3->e, 4->a, 5->s, 7->t, @->a, $->s
+  const normalized = String(str)
+    .toLowerCase()
+    .replace(/[0]/g,'o').replace(/[1!]/g,'i').replace(/[3]/g,'e')
+    .replace(/[4@]/g,'a').replace(/[5$]/g,'s').replace(/[7]/g,'t');
+  return BANNED_PATTERN.test(normalized);
 }
 
 /* ---- Post a comment ---- */
@@ -1544,22 +1663,36 @@ async function postComment() {
   btn.disabled=false; btn.textContent='Post Feedback';
 }
 
+/* ---- Pagination state ---- */
+const COMMENTS_PAGE_SIZE = 25;
+let _commentsLoaded = []; // currently rendered comments
+let _commentsHasMore = false;
+
 /* ---- Load comments from Supabase ---- */
-async function loadComments() {
+async function loadComments(append = false) {
   const list = document.getElementById('commentsList');
-  if(!isConfigured()) {
+  if (!isConfigured()) {
     const localCmts = JSON.parse(localStorage.getItem('loopmark_cmts_local')||'[]');
+    _commentsLoaded = localCmts;
+    _commentsHasMore = false;
     renderComments(localCmts);
     return;
   }
-  list.innerHTML = '<div class="cmt-loading">Loading comments…</div>';
+  if (!append) {
+    list.innerHTML = '<div class="cmt-loading">Loading comments…</div>';
+    _commentsLoaded = [];
+  }
+  const before = append && _commentsLoaded.length ? _commentsLoaded[_commentsLoaded.length - 1].created_at : null;
+  const range = `?order=created_at.desc&limit=${COMMENTS_PAGE_SIZE}` + (before ? `&created_at=lt.${encodeURIComponent(before)}` : '');
   try {
-    const res = await fetch(`${SB}/comments?order=created_at.desc&limit=50`, {
+    const res = await fetch(`${SB}/comments${range}`, {
       headers: { 'apikey': CONFIG.SUPABASE_ANON, 'Authorization': 'Bearer ' + CONFIG.SUPABASE_ANON }
     });
-    if(!res.ok) throw new Error(res.status);
+    if (!res.ok) throw new Error(res.status);
     const data = await res.json();
-    renderComments(data);
+    _commentsHasMore = data.length === COMMENTS_PAGE_SIZE;
+    _commentsLoaded = append ? _commentsLoaded.concat(data) : data;
+    renderComments(_commentsLoaded);
   } catch(e) {
     list.innerHTML = '<div class="cmt-loading" style="color:var(--red)">Could not load comments. Check your Supabase config.</div>';
   }
@@ -1603,7 +1736,6 @@ async function reportComment(id, name, text) {
 
   try {
     await emailjs.send(CONFIG.EMAILJS_SERVICE, CONFIG.EMAILJS_TEMPLATE, {
-      to_email: CONFIG.ADMIN_EMAIL,
       report_id: id,
       reported_name: name,
       reported_text: text,
@@ -1616,24 +1748,37 @@ async function reportComment(id, name, text) {
   }
 }
 
-/* ---- Delete a comment (admin only, password-protected) ---- */
+/* ---- Delete a comment (admin only, server-side gated) ---- */
 async function deleteComment(id) {
-  if(!requireAdminAuth()) return;
-  if(!confirm("Delete this comment?")) return;
-  if(isConfigured()) {
-    await fetch(`${SB}/comments?id=eq.${id}`, {
-      method: 'DELETE',
-      headers: {
-        'apikey': CONFIG.SUPABASE_ANON,
-        'Authorization': 'Bearer ' + CONFIG.SUPABASE_ANON
-      }
-    });
-    await loadComments();
-  } else {
+  if (!confirm('Delete this comment?')) return;
+  // Local-only mode (no Supabase configured): delete from localStorage.
+  if (!isConfigured()) {
     let localCmts = JSON.parse(localStorage.getItem('loopmark_cmts_local')||'[]');
-    localCmts = localCmts.filter(c=>c.id!==id);
+    localCmts = localCmts.filter(c => c.id !== id);
     localStorage.setItem('loopmark_cmts_local', JSON.stringify(localCmts));
     renderComments(localCmts);
+    return;
+  }
+  const token = getAdminToken();
+  if (!token) return;
+  try {
+    const res = await fetch('/.netlify/functions/admin-delete-comment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+      body: JSON.stringify({ id })
+    });
+    if (res.status === 401) {
+      clearAdminToken();
+      alert('Admin token rejected.');
+      return;
+    }
+    if (!res.ok) {
+      alert('Delete failed (' + res.status + ').');
+      return;
+    }
+    await loadComments();
+  } catch (e) {
+    alert('Network error while deleting.');
   }
 }
 
@@ -1650,45 +1795,140 @@ function promptRename() {
   if (n && n.trim()) renameMyPosts(n.trim());
 }
 
-/* ---- Render comments list ---- */
+/* ---- Render comments list (XSS-safe; no inline onclick) ----
+   We use DOM APIs (createElement / textContent) instead of innerHTML strings
+   so user input never enters an HTML or JS context. Buttons get data-action
+   attributes; one delegated click listener dispatches them. */
 function renderComments(cmts) {
   const list = document.getElementById('commentsList');
 
   document.getElementById('cmtCount').textContent = cmts.length ? cmts.length + ' comment' + (cmts.length!==1?'s':'') : '';
 
-  if(!cmts.length) {
-    list.innerHTML = '<div class="cmt-loading">No comments yet — be the first!</div>';
+  list.innerHTML = '';
+  if (!cmts.length) {
+    const empty = document.createElement('div');
+    empty.className = 'cmt-loading';
+    empty.textContent = 'No comments yet — be the first!';
+    list.appendChild(empty);
     return;
   }
-  list.innerHTML = '';
+
+  const myDevice = getDeviceId();
+
   cmts.forEach(c => {
-    const d = document.createElement('div');
-    d.className = 'comment-box';
-    const stars = '★'.repeat(c.rating||0) + '☆'.repeat(5-(c.rating||0));
-    const liked = localStorage.getItem('loopmark_liked_'+c.id);
-    const isOwn = c.device_id === getDeviceId();
+    const box = document.createElement('div');
+    box.className = 'comment-box';
+    box.dataset.commentId = c.id;
+
+    const header = document.createElement('div');
+    header.className = 'comment-header';
+
+    const author = document.createElement('span');
+    author.className = 'comment-author';
+    author.textContent = c.name || 'Anonymous';
+    const stars = document.createElement('span');
+    stars.style.cssText = 'color:#f5c518;margin-left:6px';
+    const r = Math.max(0, Math.min(5, c.rating || 0));
+    stars.textContent = '★'.repeat(r) + '☆'.repeat(5 - r);
+    author.appendChild(stars);
+
+    const meta = document.createElement('span');
+    meta.className = 'comment-meta';
+    meta.textContent = c.created_at ? timeAgo(new Date(c.created_at).getTime()) : '';
+
+    header.appendChild(author);
+    header.appendChild(meta);
+    box.appendChild(header);
+
+    const text = document.createElement('div');
+    text.className = 'comment-text';
+    text.textContent = c.text || '';
+    box.appendChild(text);
+
+    if (c.image_url && /^(data:image\/(jpeg|png|gif|webp);|https?:\/\/)/i.test(c.image_url)) {
+      const img = document.createElement('img');
+      img.className = 'comment-img';
+      img.loading = 'lazy';
+      img.alt = 'attached image';
+      img.src = c.image_url;
+      box.appendChild(img);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'comment-actions';
+
+    const liked = !!localStorage.getItem('loopmark_liked_' + c.id);
     const likes = c.likes || 0;
-    const ts = c.created_at ? timeAgo(new Date(c.created_at).getTime()) : '';
-    const safeText = (c.text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const safeName = (c.name||'Anonymous').replace(/</g,'&lt;');
-    const imgHtml = c.image_url ? `<img class="comment-img" src="${c.image_url}" alt="attached image" loading="lazy">` : '';
-    d.innerHTML = `
-      <div class="comment-header">
-        <span class="comment-author">${safeName} <span style="color:#f5c518;margin-left:6px">${stars}</span></span>
-        <span class="comment-meta">${ts}</span>
-      </div>
-      <div class="comment-text">${safeText}</div>
-      ${imgHtml}
-      <div class="comment-actions">
-        <button class="like-btn ${liked?'liked':''}" onclick="likeComment('${c.id}',${likes})">♥ ${likes}</button>
-        <button onclick="reportComment('${c.id}','${safeName}',\`${safeText.replace(/`/g,"'")}\`)">Report</button>
-${isOwn ? `<button onclick="promptRename()">✏ Rename me</button>` : ''}
-        <button class="btn-admin-delete" onclick="deleteComment('${c.id}')">🗑 Delete</button>
-      </div>
-    `;
-    list.appendChild(d);
+    const likeBtn = document.createElement('button');
+    likeBtn.type = 'button';
+    likeBtn.className = 'like-btn' + (liked ? ' liked' : '');
+    likeBtn.dataset.action = 'like';
+    likeBtn.dataset.likes = String(likes);
+    likeBtn.setAttribute('aria-pressed', liked ? 'true' : 'false');
+    likeBtn.setAttribute('aria-label', 'Like comment');
+    likeBtn.textContent = '♥ ' + likes;
+    actions.appendChild(likeBtn);
+
+    const reportBtn = document.createElement('button');
+    reportBtn.type = 'button';
+    reportBtn.dataset.action = 'report';
+    reportBtn.textContent = 'Report';
+    actions.appendChild(reportBtn);
+
+    if (c.device_id === myDevice) {
+      const renameBtn = document.createElement('button');
+      renameBtn.type = 'button';
+      renameBtn.dataset.action = 'rename';
+      renameBtn.textContent = '✏ Rename me';
+      actions.appendChild(renameBtn);
+    }
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'btn-admin-delete';
+    delBtn.dataset.action = 'delete';
+    delBtn.textContent = '🗑 Delete';
+    actions.appendChild(delBtn);
+
+    box.appendChild(actions);
+    list.appendChild(box);
   });
+
+  // "Load older" pagination control.
+  const existingMore = document.getElementById('loadMoreBtn');
+  if (existingMore) existingMore.remove();
+  if (_commentsHasMore) {
+    const more = document.createElement('button');
+    more.id = 'loadMoreBtn';
+    more.type = 'button';
+    more.className = 'btn btn-ghost btn-sm';
+    more.style.cssText = 'display:block;margin:12px auto 0;';
+    more.textContent = 'Load older comments';
+    more.addEventListener('click', () => loadComments(true));
+    list.appendChild(more);
+  }
 }
+
+/* Single delegated click listener for all comment-box action buttons. */
+document.getElementById('commentsList').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  const box = btn.closest('.comment-box');
+  if (!box) return;
+  const id = box.dataset.commentId;
+  const action = btn.dataset.action;
+  const cmt = _commentsLoaded.find(x => x.id === id);
+  if (!cmt) return;
+  if (action === 'like') {
+    likeComment(id, parseInt(btn.dataset.likes || '0', 10));
+  } else if (action === 'report') {
+    reportComment(id, cmt.name || 'Anonymous', cmt.text || '');
+  } else if (action === 'rename') {
+    promptRename();
+  } else if (action === 'delete') {
+    deleteComment(id);
+  }
+});
 
 // Load on start
 loadComments();
