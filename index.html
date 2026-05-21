@@ -1632,7 +1632,7 @@ async function postComment() {
 
   if(isConfigured()) {
     try {
-      const res = await fetch(`${SB}/comments?order=created_at.desc&limit=50&_=${Date.now()}`, {
+      const res = await fetch(`${SB}/comments`, {
         method: 'POST',
         headers: SUPABASE_HEADERS(),
         body: JSON.stringify({ name, text, rating: currentRating, image_url: attachedImageDataUrl || null, device_id: getDeviceId() })
